@@ -111,6 +111,25 @@ class DriveService {
   }
 }
 
+class _SelectedFile {
+  static Map<String, String> _selected;
+  static void setSelected(Map<String, String> select) {
+    _selected = select;
+  }
+
+  static void unselect() {
+    _selected = null;
+  }
+
+  static bool isSelected() {
+    return _selected != null;
+  }
+
+  static Map<String, String> getSelected() {
+    return _selected;
+  }
+}
+
 class DriveBloc extends InheritedWidget {
   final AuthService _authService = AuthService();
   final DriveService driveService = DriveService();
@@ -120,18 +139,27 @@ class DriveBloc extends InheritedWidget {
   DriveBloc({Key key, Widget child}) : super(child: child, key: key) {
     _authService.signIn().listen((GoogleSignInAccount account) async {
       driveService.initialize(await account.authHeaders);
-//      drive.FileList metaList = await driveService.getDriveMetaData();
-//      for (var metaFile in metaList.files) {
-//        driveService.fillDriveItemStream(metaFile.id);
-//      }
       updateList();
-//      driveService.updateDriveContents().listen((contents) {
-//        driveContents.add(contents);
-//        if (listener != null) {
-//          listener();
-//        }
-//      });
     });
+  }
+
+  void selectFile(String id) {
+    int indexToSelect;
+    for (int i = 0; i < driveContents.length; i++) {
+      if (driveContents[i]['id'] == id) {
+        indexToSelect = i;
+        break;
+      }
+    }
+    _SelectedFile.setSelected(driveContents[indexToSelect]);
+  }
+
+  void unselectFile() {
+    _SelectedFile.unselect();
+  }
+
+  Map<String, String> getSelected() {
+    return _SelectedFile.getSelected();
   }
 
   void delete(String id) async {
