@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "201097842542",
+    "firebase_url": "https://drivetest-7b23b.firebaseio.com",
+    "project_id": "drivetest-7b23b",
+    "storage_bucket": "drivetest-7b23b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:201097842542:android:65b2732760e97b50",
+        "android_client_info": {
+          "package_name": "com.mobilityapplied.fluttergoogleapistest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "201097842542-vj4oek3008rvhbopvp9hidqcn0tgk1fq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mobilityapplied.fluttergoogleapistest",
+            "certificate_hash": "4f88e0af88a9dd4d4e9fbe558b13f80682ce6c71"
+          }
+        },
+        {
+          "client_id": "201097842542-lqk9ghhj18o33ftu5qupi0t9370n7c29.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCApd7s_2GBuzhRHRxi5KZRX8E8vfxm9ec"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "201097842542-lqk9ghhj18o33ftu5qupi0t9370n7c29.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
