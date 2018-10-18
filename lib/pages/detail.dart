@@ -23,14 +23,14 @@ class DetailState extends State<DetailPage> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
-                  file['name'],
+                  file[Drive.NAME],
                   style: TextStyle(fontSize: 30, fontStyle: FontStyle.italic),
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
-                  file['content'],
+                  file[Drive.CONTENT],
                   style: TextStyle(fontSize: 20),
                 ),
               )

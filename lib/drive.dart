@@ -37,22 +37,58 @@ class DriveService {
   Stream<Map<String, String>> driveItemStream;
   Map<String, String> selectedContents;
   drive.DriveApi _driveApi;
-  drive.FileList fileList _fileList;
+  drive.FileList _fileList;
 
   DriveService();
 
-  Future<Map<String, String>> updateFile(String id, String title, String content) async {
-    Map<String, String> map;
+  Future<Map<String, String>> updateFile(
+      String id, String title, String content) async {
+    Map<String, String> map = Map();
+    drive.File updateFile;
+    for (int i = 0; i < _fileList.files.length; i++) {
+      if (_fileList.files[i].id == id) {
+        updateFile = _fileList.files[i];
+        break;
+      }
+    }
+    updateFile = await _updateAppDataFile(updateFile, id, content);
+    map[Drive.ID] = updateFile.id;
+    map[Drive.NAME] = updateFile.name;
+    map[Drive.CONTENT] = content;
+    return map;
+  }
 
+  Future<drive.File> _updateAppDataFile(
+      drive.File file, String id, String content) async {
+    var media = requests.Media(
+        Stream.fromFuture(_getBytes(content)), content.codeUnits.length);
+    _driveApi.files
+        .update(file, id,
+            uploadMedia: media,
+            $fields: 'id, name, parents',
+            useContentAsIndexableText: true)
+        .then((drive.File f) {
+      print('Successful update. Name: ' +
+          f.name +
+          ', ID: ' +
+          f.id +
+          ', parent: ' +
+          f.parents.toString());
+      file = f;
+    }, onError: (e) {
+      file = null;
+      print('Failed to upload file: ' + e.toString());
+    });
+    return file;
   }
 
   Future<Map<String, String>> createFile(String title, String content) async {
     Map<String, String> map;
     drive.File file = await _createAppDataFile(title, content);
     map = Map();
-    map['id'] = file.id;
-    map['name'] = file.name;
-    map['content'] = content;
+    map[Drive.ID] = file.id;
+    map[Drive.NAME] = file.name;
+    map[Drive.CONTENT] = content;
     return map;
   }
 
@@ -113,9 +149,9 @@ class DriveService {
 
     for (int i = 0; i < mediaList.length; i++) {
       Map<String, String> entry = Map();
-      entry['id'] = fileList.files[i].id;
-      entry['name'] = fileList.files[i].name;
-      entry['content'] = await _getStringFromStream(mediaList[i].stream);
+      entry[Drive.ID] = _fileList.files[i].id;
+      entry[Drive.NAME] = _fileList.files[i].name;
+      entry[Drive.CONTENT] = await _getStringFromStream(mediaList[i].stream);
       yield entry;
       //contents.add(entry);
     }
@@ -148,7 +184,7 @@ class DriveService {
     }
     await for (var list in driveContents) {
       for (var map in list) {
-        if (map['id'] == id) {
+        if (map[Drive.ID] == id) {
           yield map;
         }
       }
@@ -177,6 +213,9 @@ class _SelectedFile {
 }
 
 class Drive extends InheritedWidget {
+  static const String ID = 'id';
+  static const String NAME = 'name';
+  static const String CONTENT = 'content';
   final AuthService _authService = AuthService();
   final DriveService _driveService = DriveService();
   List<Map<String, String>> driveContents = [];
@@ -195,6 +234,20 @@ class Drive extends InheritedWidget {
     }
   }
 
+  void updateFile(Map<String, String> file) async {
+    Map<String, String> updatedFile =
+        await _driveService.updateFile(file[ID], file[NAME], file[CONTENT]);
+    int indexOfUpdated;
+    for (int i = 0; i < driveContents.length; ++i) {
+      if (driveContents[i][ID] == updatedFile[ID]) {
+        indexOfUpdated = i;
+        break;
+      }
+    }
+    driveContents[indexOfUpdated] = updatedFile;
+    _notify();
+  }
+
   void addFile(String title, String content) async {
     driveContents.insert(0, await _driveService.createFile(title, content));
     _notify();
@@ -203,7 +256,7 @@ class Drive extends InheritedWidget {
   void selectFile(String id) {
     int indexToSelect;
     for (int i = 0; i < driveContents.length; i++) {
-      if (driveContents[i]['id'] == id) {
+      if (driveContents[i][ID] == id) {
         indexToSelect = i;
         break;
       }
@@ -222,7 +275,7 @@ class Drive extends InheritedWidget {
   void delete(String id) async {
     int indexToRemove;
     for (int i = 0; i < driveContents.length; i++) {
-      if (driveContents[i]['id'] == id) {
+      if (driveContents[i][ID] == id) {
         indexToRemove = i;
         break;
       }
@@ -251,7 +304,7 @@ class Drive extends InheritedWidget {
       (context.inheritFromWidgetOfExactType(Drive));
 
   @override
-  bool updateShouldNotify(Drive oldWidget) {
+  bool updateShouldNotify(InheritedWidget oldWidget) {
     return true;
   }
 }

@@ -26,23 +26,23 @@ class _HomePageState extends State<HomePage> {
               itemCount: Drive.of(context).driveContents.length,
               itemBuilder: (context, index) {
                 return Dismissible(
-                  key: Key(Drive.of(context).driveContents[index]['id']),
+                  key: Key(Drive.of(context).driveContents[index][Drive.ID]),
                   onDismissed: (DismissDirection direction) {
                     String id =
-                        Drive.of(context).driveContents[index]['id'];
+                        Drive.of(context).driveContents[index][Drive.ID];
                     Drive.of(context).delete(id);
                   },
                   background: Container(color: Colors.red),
                   child: GestureDetector(
                     onTap: () {
                       Drive.of(context).selectFile(
-                          Drive.of(context).driveContents[index]['id']);
+                          Drive.of(context).driveContents[index][Drive.ID]);
                       Navigator.pushNamed(context, '/detail');
                     },
                     child: Padding(
                       padding: EdgeInsets.all(16.0),
                       child: Text(
-                        Drive.of(context).driveContents[index]['name'],
+                        Drive.of(context).driveContents[index][Drive.NAME],
                         style: TextStyle(fontSize: 32.0),
                       ),
                     ),
