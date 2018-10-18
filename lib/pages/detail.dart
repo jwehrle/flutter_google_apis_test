@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../blocProvider.dart';
+import '../drive.dart';
 
 class DetailPage extends StatefulWidget {
   @override
@@ -9,7 +9,7 @@ class DetailPage extends StatefulWidget {
 class DetailState extends State<DetailPage> {
   @override
   Widget build(BuildContext context) {
-    Map<String, String> file = DriveBloc.of(context).getSelected();
+    Map<String, String> file = Drive.of(context).getSelected();
     return Scaffold(
       appBar: new AppBar(
         title: new Text('File Details'),

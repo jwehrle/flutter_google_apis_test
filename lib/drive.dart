@@ -37,8 +37,14 @@ class DriveService {
   Stream<Map<String, String>> driveItemStream;
   Map<String, String> selectedContents;
   drive.DriveApi _driveApi;
+  drive.FileList fileList _fileList;
 
   DriveService();
+
+  Future<Map<String, String>> updateFile(String id, String title, String content) async {
+    Map<String, String> map;
+
+  }
 
   Future<Map<String, String>> createFile(String title, String content) async {
     Map<String, String> map;
@@ -94,12 +100,12 @@ class DriveService {
     if (_driveApi == null) {
       yield contents;
     }
-    drive.FileList fileList = await _driveApi.files.list(
+    _fileList = await _driveApi.files.list(
         spaces: 'appDataFolder',
         $fields: 'files(id, name, parents)',
         pageSize: 10);
     List<requests.Media> mediaList = [];
-    for (var metaFile in fileList.files) {
+    for (var metaFile in _fileList.files) {
       requests.Media mediaFile = await _driveApi.files.get(metaFile.id,
           downloadOptions: requests.DownloadOptions.FullMedia);
       mediaList.add(mediaFile);
@@ -170,13 +176,13 @@ class _SelectedFile {
   }
 }
 
-class DriveBloc extends InheritedWidget {
+class Drive extends InheritedWidget {
   final AuthService _authService = AuthService();
   final DriveService _driveService = DriveService();
   List<Map<String, String>> driveContents = [];
   Function _listener;
 
-  DriveBloc({Key key, Widget child}) : super(child: child, key: key) {
+  Drive({Key key, Widget child}) : super(child: child, key: key) {
     _authService.signIn().listen((GoogleSignInAccount account) async {
       _driveService.initialize(await account.authHeaders);
       updateList();
@@ -190,7 +196,7 @@ class DriveBloc extends InheritedWidget {
   }
 
   void addFile(String title, String content) async {
-    driveContents.add(await _driveService.createFile(title, content));
+    driveContents.insert(0, await _driveService.createFile(title, content));
     _notify();
   }
 
@@ -241,11 +247,11 @@ class DriveBloc extends InheritedWidget {
     _listener = notify;
   }
 
-  static DriveBloc of(BuildContext context) =>
-      (context.inheritFromWidgetOfExactType(DriveBloc));
+  static Drive of(BuildContext context) =>
+      (context.inheritFromWidgetOfExactType(Drive));
 
   @override
-  bool updateShouldNotify(DriveBloc oldWidget) {
+  bool updateShouldNotify(Drive oldWidget) {
     return true;
   }
 }

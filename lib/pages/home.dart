@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../blocProvider.dart';
+import '../drive.dart';
 import 'detail.dart';
 
 class HomePage extends StatefulWidget {
@@ -13,36 +13,36 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
-    DriveBloc.of(context).registerListener(notify);
+    Drive.of(context).registerListener(notify);
     return Scaffold(
       appBar: AppBar(
         title: Text('Drive Test Home Page'),
       ),
-      body: DriveBloc.of(context).driveContents.isEmpty
+      body: Drive.of(context).driveContents.isEmpty
           ? Center(
               child: CircularProgressIndicator(),
             )
           : ListView.builder(
-              itemCount: DriveBloc.of(context).driveContents.length,
+              itemCount: Drive.of(context).driveContents.length,
               itemBuilder: (context, index) {
                 return Dismissible(
-                  key: Key(DriveBloc.of(context).driveContents[index]['id']),
+                  key: Key(Drive.of(context).driveContents[index]['id']),
                   onDismissed: (DismissDirection direction) {
                     String id =
-                        DriveBloc.of(context).driveContents[index]['id'];
-                    DriveBloc.of(context).delete(id);
+                        Drive.of(context).driveContents[index]['id'];
+                    Drive.of(context).delete(id);
                   },
                   background: Container(color: Colors.red),
                   child: GestureDetector(
                     onTap: () {
-                      DriveBloc.of(context).selectFile(
-                          DriveBloc.of(context).driveContents[index]['id']);
+                      Drive.of(context).selectFile(
+                          Drive.of(context).driveContents[index]['id']);
                       Navigator.pushNamed(context, '/detail');
                     },
                     child: Padding(
                       padding: EdgeInsets.all(16.0),
                       child: Text(
-                        DriveBloc.of(context).driveContents[index]['name'],
+                        Drive.of(context).driveContents[index]['name'],
                         style: TextStyle(fontSize: 32.0),
                       ),
                     ),

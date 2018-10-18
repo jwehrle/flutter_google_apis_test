@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../blocProvider.dart';
+import '../drive.dart';
 
 class AddPage extends StatefulWidget {
   @override
@@ -43,7 +43,7 @@ class AddState extends State<AddPage> {
       ),
       floatingActionButton: new FloatingActionButton(
         onPressed: () {
-          DriveBloc.of(context)
+          Drive.of(context)
               .addFile(titleController.text, contentController.text);
           Navigator.pushNamed(context, '/');
         },
