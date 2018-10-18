@@ -14,7 +14,7 @@ class AddState extends State<AddPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: new AppBar(
-        title: new Text('File Details'),
+        title: new Text('Add A File'),
       ),
       body: Container(
         constraints: BoxConstraints.expand(width: double.maxFinite),

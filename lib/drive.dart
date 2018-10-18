@@ -2,10 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:rxdart/rxdart.dart';
-import 'package:bloc/bloc.dart';
 import 'app_drive_api/v3.dart' as drive;
-import 'app_drive_api/clients.dart' as clients;
 import 'app_drive_api/requests.dart' as requests;
 import 'package:http/http.dart' as http;
 
@@ -153,9 +150,7 @@ class DriveService {
       entry[Drive.NAME] = _fileList.files[i].name;
       entry[Drive.CONTENT] = await _getStringFromStream(mediaList[i].stream);
       yield entry;
-      //contents.add(entry);
     }
-    //yield contents;
   }
 
   Future<drive.FileList> getDriveMetaData() async {
@@ -232,6 +227,21 @@ class Drive extends InheritedWidget {
     if (_listener != null) {
       _listener();
     }
+  }
+
+  void rename(Map<String, String> file) async {
+    int indexToRemove;
+    for (int i = 0; i < driveContents.length; i++) {
+      if (driveContents[i][ID] == file[ID]) {
+        indexToRemove = i;
+        break;
+      }
+    }
+    driveContents[indexToRemove] = file;
+    _driveService._fileList.files[indexToRemove].name = file[NAME];
+    _notify();
+    await _driveService.deleteFile(file[ID]);
+    await _driveService.createFile(file[NAME], file[CONTENT]);
   }
 
   void updateFile(Map<String, String> file) async {

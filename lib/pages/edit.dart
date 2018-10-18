@@ -16,7 +16,7 @@ class EditState extends State<EditPage> {
         TextEditingController(text: file[Drive.CONTENT]);
     return Scaffold(
       appBar: new AppBar(
-        title: new Text('File Details'),
+        title: new Text('File Editing'),
       ),
       body: ListView(
         children: <Widget>[
@@ -39,9 +39,15 @@ class EditState extends State<EditPage> {
       ),
       floatingActionButton: new FloatingActionButton(
         onPressed: () {
-          file[Drive.NAME] = nameController.text;
-          file[Drive.CONTENT] = contentController.text;
-          Drive.of(context).updateFile(file);
+          if (file[Drive.NAME] != nameController.text) {
+            file[Drive.NAME] = nameController.text;
+            file[Drive.CONTENT] = contentController.text;
+            Drive.of(context).rename(file);
+          } else if (file[Drive.CONTENT] != contentController.text) {
+            file[Drive.NAME] = nameController.text;
+            file[Drive.CONTENT] = contentController.text;
+            Drive.of(context).updateFile(file);
+          }
           Navigator.pushNamed(context, '/');
         },
         child: Icon(Icons.check),
