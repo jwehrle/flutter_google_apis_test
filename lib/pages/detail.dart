@@ -14,25 +14,28 @@ class DetailState extends State<DetailPage> {
       appBar: new AppBar(
         title: new Text('File Details'),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(18.0),
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                file['name'],
-                style: TextStyle(fontSize: 30, fontStyle: FontStyle.italic),
+      body: Container(
+        constraints: BoxConstraints.expand(width: double.maxFinite),
+        child: Padding(
+          padding: EdgeInsets.all(18.0),
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  file['name'],
+                  style: TextStyle(fontSize: 30, fontStyle: FontStyle.italic),
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                file['content'],
-                style: TextStyle(fontSize: 20),
-              ),
-            )
-          ],
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  file['content'],
+                  style: TextStyle(fontSize: 20),
+                ),
+              )
+            ],
+          ),
         ),
       ),
       floatingActionButton: new FloatingActionButton(

@@ -40,13 +40,53 @@ class DriveService {
 
   DriveService();
 
+  Future<Map<String, String>> createFile(String title, String content) async {
+    Map<String, String> map;
+    drive.File file = await _createAppDataFile(title, content);
+    map = Map();
+    map['id'] = file.id;
+    map['name'] = file.name;
+    map['content'] = content;
+    return map;
+  }
+
+  Future<List<int>> _getBytes(String text) async {
+    return text.codeUnits;
+  }
+
+  Future<drive.File> _createAppDataFile(String title, String content) async {
+    drive.File createdFile = new drive.File();
+    createdFile.name = title;
+    createdFile.parents = ['appDataFolder'];
+    createdFile.mimeType = 'application/json';
+    var media = requests.Media(
+        Stream.fromFuture(_getBytes(content)), content.codeUnits.length);
+    _driveApi.files
+        .create(createdFile,
+            uploadMedia: media,
+            $fields: 'id, name, parents',
+            useContentAsIndexableText: true)
+        .then((drive.File f) {
+      print('Successful upload. Name: ' +
+          f.name +
+          ', ID: ' +
+          f.id +
+          ', parent: ' +
+          f.parents.toString());
+      createdFile = f;
+    }, onError: (e) {
+      createdFile = null;
+      print('Failed to upload file: ' + e.toString());
+    });
+    return createdFile;
+  }
+
   Future<dynamic> deleteFile(String id) async {
     return _driveApi.files.delete(id);
   }
 
   void initialize(Map<String, String> headers) {
     _driveApi = drive.DriveApi(new http.Client(), headers);
-    //driveContents = updateDriveContents();
   }
 
   Stream<Map<String, String>> updateDriveContents() async* {
@@ -132,15 +172,26 @@ class _SelectedFile {
 
 class DriveBloc extends InheritedWidget {
   final AuthService _authService = AuthService();
-  final DriveService driveService = DriveService();
+  final DriveService _driveService = DriveService();
   List<Map<String, String>> driveContents = [];
-  Function listener;
+  Function _listener;
 
   DriveBloc({Key key, Widget child}) : super(child: child, key: key) {
     _authService.signIn().listen((GoogleSignInAccount account) async {
-      driveService.initialize(await account.authHeaders);
+      _driveService.initialize(await account.authHeaders);
       updateList();
     });
+  }
+
+  void _notify() {
+    if (_listener != null) {
+      _listener();
+    }
+  }
+
+  void addFile(String title, String content) async {
+    driveContents.add(await _driveService.createFile(title, content));
+    _notify();
   }
 
   void selectFile(String id) {
@@ -171,7 +222,7 @@ class DriveBloc extends InheritedWidget {
       }
     }
     driveContents.removeAt(indexToRemove);
-    requests.ApiRequestError response = await driveService.deleteFile(id);
+    requests.ApiRequestError response = await _driveService.deleteFile(id);
     if (response != null) {
       print(response);
       driveContents.clear();
@@ -180,16 +231,14 @@ class DriveBloc extends InheritedWidget {
   }
 
   void updateList() {
-    driveService.updateDriveContents().listen((contents) {
+    _driveService.updateDriveContents().listen((contents) {
       driveContents.add(contents);
-      if (listener != null) {
-        listener();
-      }
+      _notify();
     });
   }
 
   void registerListener(Function notify) {
-    listener = notify;
+    _listener = notify;
   }
 
   static DriveBloc of(BuildContext context) =>

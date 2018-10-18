@@ -61,12 +61,4 @@ class _HomePageState extends State<HomePage> {
   void notify() {
     setState(() {});
   }
-
-//  void _createFile(MainModel model, String title, String content) async {
-//    driveHelper.createAppDataFile(title, content).then((drive.File file) {
-//      driveHelper.listAppDataFiles().then((drive.FileList fileList) {
-//        model.setFileList(fileList);
-//      });
-//    });
-//  }
 }

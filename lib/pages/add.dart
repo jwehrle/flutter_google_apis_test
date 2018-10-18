@@ -7,34 +7,46 @@ class AddPage extends StatefulWidget {
 }
 
 class AddState extends State<AddPage> {
+  TextEditingController titleController = TextEditingController();
+  TextEditingController contentController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: new AppBar(
         title: new Text('File Details'),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(18.0),
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                decoration: InputDecoration(labelText: 'Title'),
+      body: Container(
+        constraints: BoxConstraints.expand(width: double.maxFinite),
+        child: Padding(
+          padding: EdgeInsets.all(18.0),
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  controller: titleController,
+                  decoration: InputDecoration(labelText: 'Title'),
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                maxLines: 20,
-                decoration: InputDecoration(labelText: 'Content'),
-              ),
-            )
-          ],
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  controller: contentController,
+                  maxLines: 20,
+                  decoration: InputDecoration(labelText: 'Content'),
+                ),
+              )
+            ],
+          ),
         ),
       ),
       floatingActionButton: new FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          DriveBloc.of(context)
+              .addFile(titleController.text, contentController.text);
+          Navigator.pushNamed(context, '/');
+        },
         child: Icon(Icons.check),
       ),
     );

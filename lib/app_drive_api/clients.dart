@@ -236,8 +236,8 @@ class ApiRequester {
       if (body == null) {
         return simpleUpload();
       } else {
-        var uploader = MultipartMediaUploader(
-            _httpClient, uploadMedia, body, uri, method, _userAgent);
+        var uploader = MultipartMediaUploader(_httpClient, uploadMedia, body,
+            uri, method, _userAgent, _authHeaders);
         return uploader.upload();
       }
     }
@@ -258,9 +258,10 @@ class MultipartMediaUploader {
   final String _body;
   final String _method;
   final String _userAgent;
+  final Map<String, String> _authHeaders;
 
   MultipartMediaUploader(this._httpClient, this._uploadMedia, this._body,
-      this._uri, this._method, this._userAgent);
+      this._uri, this._method, this._userAgent, this._authHeaders);
 
   Future<http.StreamedResponse> upload() {
     var base64MediaStream =
@@ -300,6 +301,7 @@ class MultipartMediaUploader {
     var bodyStream = bodyController.stream;
     var request = _RequestImpl(_method, _uri, bodyStream);
     request.headers.addAll(headers);
+    request.headers.addAll(_authHeaders);
     return _httpClient.send(request);
   }
 }
