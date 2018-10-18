@@ -20,10 +20,10 @@ class MyApp extends StatelessWidget {
       ),
       //home: new HomePage(title: 'Drive Test Home Page'),
       routes: {
-        '/' : (context) => HomePage(),
-        '/detail' : (context) => DetailPage(),
+        '/': (context) => HomePage(),
+        '/detail': (context) => DetailPage(),
         '/edit': (context) => EditPage(),
-        '/add' : (context) => AddPage()
+        '/add': (context) => AddPage()
       },
     ));
   }

@@ -21,14 +21,16 @@ class EditState extends State<EditPage> {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(
-                decoration: InputDecoration(hintText: file['name'], labelText: 'Title'),
+                decoration:
+                    InputDecoration(hintText: file['name'], labelText: 'Title'),
               ),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(
                 maxLines: 20,
-                decoration: InputDecoration(hintText: file['content'], labelText: 'Content'),
+                decoration: InputDecoration(
+                    hintText: file['content'], labelText: 'Content'),
               ),
             )
           ],

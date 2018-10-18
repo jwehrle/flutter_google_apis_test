@@ -4,7 +4,6 @@ import '../blocProvider.dart';
 class AddPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => AddState();
-
 }
 
 class AddState extends State<AddPage> {
@@ -40,6 +39,4 @@ class AddState extends State<AddPage> {
       ),
     );
   }
-
-
 }
