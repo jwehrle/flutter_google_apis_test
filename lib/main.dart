@@ -4,6 +4,7 @@ import 'blocProvider.dart';
 import './pages/home.dart';
 import './pages/detail.dart';
 import './pages/edit.dart';
+import './pages/add.dart';
 
 void main() => runApp(new MyApp());
 
@@ -19,9 +20,10 @@ class MyApp extends StatelessWidget {
       ),
       //home: new HomePage(title: 'Drive Test Home Page'),
       routes: {
-        '/': (context) => HomePage(),
-        '/detail': (context) => DetailPage(),
-        '/edit': (context) => EditPage()
+        '/' : (context) => HomePage(),
+        '/detail' : (context) => DetailPage(),
+        '/edit': (context) => EditPage(),
+        '/add' : (context) => AddPage()
       },
     ));
   }

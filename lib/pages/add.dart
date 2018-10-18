@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import '../blocProvider.dart';
 
-class EditPage extends StatefulWidget {
+class AddPage extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() => EditState();
+  State<StatefulWidget> createState() => AddState();
+
 }
 
-class EditState extends State<EditPage> {
+class AddState extends State<AddPage> {
   @override
   Widget build(BuildContext context) {
-    Map<String, String> file = DriveBloc.of(context).getSelected();
     return Scaffold(
       appBar: new AppBar(
         title: new Text('File Details'),
@@ -21,14 +21,14 @@ class EditState extends State<EditPage> {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(
-                decoration: InputDecoration(hintText: file['name'], labelText: 'Title'),
+                decoration: InputDecoration(labelText: 'Title'),
               ),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(
                 maxLines: 20,
-                decoration: InputDecoration(hintText: file['content'], labelText: 'Content'),
+                decoration: InputDecoration(labelText: 'Content'),
               ),
             )
           ],
@@ -40,4 +40,6 @@ class EditState extends State<EditPage> {
       ),
     );
   }
+
+
 }

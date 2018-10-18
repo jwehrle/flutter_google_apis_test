@@ -49,12 +49,12 @@ class _HomePageState extends State<HomePage> {
                   ),
                 );
               }),
-//      floatingActionButton: new FloatingActionButton(
-//        onPressed: () {
-//          Navigator.pushNamed(context, '/detail');
-//        },
-//        child: Icon(Icons.add),
-//      ),
+      floatingActionButton: new FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/add');
+        },
+        child: Icon(Icons.add),
+      ),
     );
   }
 
