@@ -1,15 +1,11 @@
-import 'package:flutter_google_apis_test/controllers/auth_controller.dart';
 import 'package:scoped_model/scoped_model.dart';
 import 'package:flutter_google_apis_test/app_drive_api/v3.dart' as drive;
 import 'package:flutter_google_apis_test/controllers/drive_controller.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class MainModel extends Model {
   GoogleSignInAccount _googleSignInAccount;
-  GoogleSignInAuthentication _googleSignInAuthentication;
-  FirebaseUser _user;
   bool _signedIn = false;
   drive.DriveApi _driveApi;
   Map<String, drive.File> _metaMap = Map();
@@ -53,11 +49,7 @@ class MainModel extends Model {
   }
 
   void signOut() async {
-    try {
-      await AuthController.signOut(_googleSignInAccount, _user);
-    } on Exception catch (e) {
-      print(e.toString());
-    }
+    _googleSignInAccount = null;
     _signedIn = false;
     notifyListeners();
   }
@@ -78,7 +70,6 @@ class MainModel extends Model {
     isLoading = true;
     notifyListeners();
     try {
-      // TODO this is being requested continuously until we are loaded.
       String content = await DriveController.getFileContents(_driveApi, id);
       _contentMap[id] = content;
     } on Exception catch (e) {

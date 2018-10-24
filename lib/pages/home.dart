@@ -71,7 +71,6 @@ class _HomePageState extends State<HomePage> {
             background: Container(color: Colors.red),
             child: GestureDetector(
               onTap: () {
-                //Drive.of(context).selectFile(metaList[index].id);
                 model.selectedID = files[index].id;
                 Navigator.pushNamed(context, '/detail');
               },
