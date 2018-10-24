@@ -1,30 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_google_apis_test/models/main_model.dart';
 //import 'package:googleapis/drive/v3.dart';
-import 'drive.dart';
 import './pages/home.dart';
 import './pages/detail.dart';
 import './pages/edit.dart';
 import './pages/add.dart';
+import 'package:scoped_model/scoped_model.dart';
 
 void main() => runApp(new MyApp());
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+class MyApp extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() => MyAppState();
+}
+
+class MyAppState extends State<MyApp> {
+  MainModel _model = MainModel();
+
   @override
   Widget build(BuildContext context) {
-    return Drive(
-        child: MaterialApp(
-      title: 'Drive Test',
-      theme: new ThemeData(
-        primarySwatch: Colors.blue,
+    return ScopedModel<MainModel>(
+      model: _model,
+      child: MaterialApp(
+        title: 'Drive Test',
+        theme: new ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        routes: {
+          '/': (context) => HomePage(),
+          '/detail': (context) => DetailPage(),
+          '/edit': (context) => EditPage(),
+          '/add': (context) => AddPage()
+        },
       ),
-      //home: new HomePage(title: 'Drive Test Home Page'),
-      routes: {
-        '/': (context) => HomePage(),
-        '/detail': (context) => DetailPage(),
-        '/edit': (context) => EditPage(),
-        '/add': (context) => AddPage()
-      },
-    ));
+    );
   }
 }

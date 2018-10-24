@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../drive.dart';
-import 'detail.dart';
+import 'package:flutter_google_apis_test/models/main_model.dart';
+import 'package:scoped_model/scoped_model.dart';
+import 'package:flutter_google_apis_test/app_drive_api/v3.dart' as drive;
 
 class HomePage extends StatefulWidget {
   HomePage({Key key, this.title}) : super(key: key);
@@ -13,52 +14,76 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
-    Drive.of(context).registerListener(notify);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Drive Test Home Page'),
-      ),
-      body: Drive.of(context).driveContents.isEmpty
-          ? Center(
-              child: CircularProgressIndicator(),
-            )
-          : ListView.builder(
-              itemCount: Drive.of(context).driveContents.length,
-              itemBuilder: (context, index) {
-                return Dismissible(
-                  key: Key(Drive.of(context).driveContents[index][Drive.ID]),
-                  onDismissed: (DismissDirection direction) {
-                    String id =
-                        Drive.of(context).driveContents[index][Drive.ID];
-                    Drive.of(context).delete(id);
-                  },
-                  background: Container(color: Colors.red),
-                  child: GestureDetector(
-                    onTap: () {
-                      Drive.of(context).selectFile(
-                          Drive.of(context).driveContents[index][Drive.ID]);
-                      Navigator.pushNamed(context, '/detail');
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Text(
-                        Drive.of(context).driveContents[index][Drive.NAME],
-                        style: TextStyle(fontSize: 32.0),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-      floatingActionButton: new FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/add');
-        },
-        child: Icon(Icons.add),
-      ),
-    );
+    return ScopedModelDescendant<MainModel>(
+        builder: (BuildContext context, Widget child, MainModel model) {
+      List<drive.File> files = [];
+      if (model.signedIn) {
+        for (var id in model.metaMap.entries) {
+          files.add(model.metaMap[id]);
+        }
+      } else {
+        model.signIn();
+      }
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Drive Test Home Page'),
+        ),
+        body: _buildBasedOnModel(model),
+        floatingActionButton: new FloatingActionButton(
+          onPressed: () {
+            Navigator.pushNamed(context, '/add');
+          },
+          child: Icon(Icons.add),
+        ),
+      );
+    });
   }
 
-  void notify() {
-    setState(() {});
+  Widget _buildBasedOnModel(MainModel model) {
+    if (!model.signedIn) {
+      return Center(
+        child: Text('Not signed in.'),
+      );
+    }
+    if (model.isLoading) {
+      return Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (model.metaMap.isEmpty) {
+      return ListView(
+        children: <Widget>[],
+      );
+    }
+    List<drive.File> files = [];
+    model.metaMap.forEach((id, file) {
+      files.add(file);
+    });
+    return ListView.builder(
+        itemCount: files.length,
+        itemBuilder: (context, index) {
+          return Dismissible(
+            key: Key(files[index].id),
+            onDismissed: (DismissDirection direction) {
+              model.deleteFile(files[index].id);
+            },
+            background: Container(color: Colors.red),
+            child: GestureDetector(
+              onTap: () {
+                //Drive.of(context).selectFile(metaList[index].id);
+                model.selectedID = files[index].id;
+                Navigator.pushNamed(context, '/detail');
+              },
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  files[index].name,
+                  style: TextStyle(fontSize: 32.0),
+                ),
+              ),
+            ),
+          );
+        });
   }
 }

@@ -30,9 +30,6 @@ class AuthService {
 }
 
 class DriveService {
-  Stream<List<Map<String, String>>> driveContents;
-  Stream<Map<String, String>> driveItemStream;
-  Map<String, String> selectedContents;
   drive.DriveApi _driveApi;
   drive.FileList _fileList;
 
@@ -48,29 +45,21 @@ class DriveService {
         break;
       }
     }
-    updateFile = await _updateAppDataFile(updateFile, id, content);
+    updateFile = await updateFileContent(updateFile, content);
     map[Drive.ID] = updateFile.id;
     map[Drive.NAME] = updateFile.name;
     map[Drive.CONTENT] = content;
     return map;
   }
 
-  Future<drive.File> _updateAppDataFile(
-      drive.File file, String id, String content) async {
+  Future<drive.File> updateFileContent(drive.File file, String content) async {
     var media = requests.Media(
         Stream.fromFuture(_getBytes(content)), content.codeUnits.length);
     _driveApi.files
-        .update(file, id,
-            uploadMedia: media,
-            $fields: 'id, name, parents',
-            useContentAsIndexableText: true)
+        .update(file, file.id, uploadMedia: media) // $fields: 'id, name'
         .then((drive.File f) {
-      print('Successful update. Name: ' +
-          f.name +
-          ', ID: ' +
-          f.id +
-          ', parent: ' +
-          f.parents.toString());
+      print('Successful update. ID: ' +
+          f.id); //', parent: ' + f.parents.toString()
       file = f;
     }, onError: (e) {
       file = null;
@@ -79,44 +68,41 @@ class DriveService {
     return file;
   }
 
-  Future<Map<String, String>> createFile(String title, String content) async {
-    Map<String, String> map;
-    drive.File file = await _createAppDataFile(title, content);
-    map = Map();
-    map[Drive.ID] = file.id;
-    map[Drive.NAME] = file.name;
-    map[Drive.CONTENT] = content;
-    return map;
-  }
+//  Future<drive.File> createFile(String title, String content) async {
+//    Map<String, String> map;
+//    drive.File file = await _createAppDataFile(title, content);
+//    map = Map();
+//    map[Drive.ID] = file.id;
+//    map[Drive.NAME] = file.name;
+//    map[Drive.CONTENT] = content;
+//    return map;
+//  }
 
   Future<List<int>> _getBytes(String text) async {
     return text.codeUnits;
   }
 
-  Future<drive.File> _createAppDataFile(String title, String content) async {
+  Future<drive.File> createFile(String title, String content) async {
     drive.File createdFile = new drive.File();
     createdFile.name = title;
     createdFile.parents = ['appDataFolder'];
     createdFile.mimeType = 'application/json';
     var media = requests.Media(
         Stream.fromFuture(_getBytes(content)), content.codeUnits.length);
-    _driveApi.files
-        .create(createdFile,
-            uploadMedia: media,
-            $fields: 'id, name, parents',
-            useContentAsIndexableText: true)
-        .then((drive.File f) {
-      print('Successful upload. Name: ' +
-          f.name +
-          ', ID: ' +
-          f.id +
-          ', parent: ' +
-          f.parents.toString());
-      createdFile = f;
-    }, onError: (e) {
-      createdFile = null;
-      print('Failed to upload file: ' + e.toString());
-    });
+    createdFile = await _driveApi.files.create(createdFile,
+        uploadMedia: media,
+        $fields: 'id, name, parents',
+        useContentAsIndexableText: true);
+//    .then((drive.File f) {
+//    print('Successful upload. Name: ' +
+//    f.name +
+//    ', ID: ' +
+//    f.id); // + ', parent: ' + f.parents.toString()
+//    createdFile = f;
+//    }, onError: (e) {
+//    createdFile = null;
+//    print('Failed to upload file: ' + e.toString());
+//    })
     return createdFile;
   }
 
@@ -128,15 +114,35 @@ class DriveService {
     _driveApi = drive.DriveApi(new http.Client(), headers);
   }
 
+  Stream<Map<String, drive.File>> getMetaFiles() async* {
+    if (_driveApi != null) {
+      try {
+        drive.FileList fileList = await _driveApi.files.list(
+            spaces: 'appDataFolder', $fields: 'files(id, name)', pageSize: 10);
+        Map<String, drive.File> metaMap = Map();
+        for (var meta in fileList.files) {
+          metaMap[meta.id] = meta;
+        }
+        yield metaMap;
+      } on Exception catch (e) {
+        print(e.toString());
+      }
+    }
+  }
+
+  Future<String> getFileContents(String id) async {
+    requests.Media mediaFile = await _driveApi.files
+        .get(id, downloadOptions: requests.DownloadOptions.FullMedia);
+    return await _getStringFromStream(mediaFile.stream);
+  }
+
   Stream<Map<String, String>> updateDriveContents() async* {
     Map<String, String> contents = Map();
     if (_driveApi == null) {
       yield contents;
     }
     _fileList = await _driveApi.files.list(
-        spaces: 'appDataFolder',
-        $fields: 'files(id, name, parents)',
-        pageSize: 10);
+        spaces: 'appDataFolder', $fields: 'files(id, name)', pageSize: 10);
     List<requests.Media> mediaList = [];
     for (var metaFile in _fileList.files) {
       requests.Media mediaFile = await _driveApi.files.get(metaFile.id,
@@ -155,9 +161,7 @@ class DriveService {
 
   Future<drive.FileList> getDriveMetaData() async {
     return await _driveApi.files.list(
-        spaces: 'appDataFolder',
-        $fields: 'files(id, name, parents)',
-        pageSize: 10);
+        spaces: 'appDataFolder', $fields: 'files(id, name)', pageSize: 10);
   }
 
   Stream<Map<String, String>> fillDriveItemStream(String id) async* {
@@ -171,20 +175,6 @@ class DriveService {
       byteArray = b;
     }
     return String.fromCharCodes(byteArray);
-  }
-
-  Stream<Map<String, String>> updateSelected({String id}) async* {
-    if (id == null) {
-      yield null;
-    }
-    await for (var list in driveContents) {
-      for (var map in list) {
-        if (map[Drive.ID] == id) {
-          yield map;
-        }
-      }
-    }
-    yield null;
   }
 }
 
@@ -214,100 +204,160 @@ class Drive extends InheritedWidget {
   final AuthService _authService = AuthService();
   final DriveService _driveService = DriveService();
   List<Map<String, String>> driveContents = [];
-  Function _listener;
+  String _selected = "";
+
+  Map<String, drive.File> metaMap = Map();
+  Map<String, String> contentMap = Map();
+
+  Function _metaFilesListener;
+  Map<String, Function> _contentListenerMap = Map();
 
   Drive({Key key, Widget child}) : super(child: child, key: key) {
     _authService.signIn().listen((GoogleSignInAccount account) async {
       _driveService.initialize(await account.authHeaders);
-      updateList();
+      subscribeToMetaFiles();
     });
   }
 
-  void _notify() {
-    if (_listener != null) {
-      _listener();
+  void _notifyMetaFilesListener() {
+    if (_metaFilesListener != null) {
+      _metaFilesListener();
     }
   }
 
-  void rename(Map<String, String> file) async {
-    int indexToRemove;
-    for (int i = 0; i < driveContents.length; i++) {
-      if (driveContents[i][ID] == file[ID]) {
-        indexToRemove = i;
-        break;
-      }
+  void _notifyContentListener(String id) {
+    if (_contentListenerMap.containsKey(id)) {
+      _contentListenerMap[id]();
     }
-    driveContents[indexToRemove] = file;
-    _driveService._fileList.files[indexToRemove].name = file[NAME];
-    _notify();
-    await _driveService.deleteFile(file[ID]);
-    await _driveService.createFile(file[NAME], file[CONTENT]);
   }
 
-  void updateFile(Map<String, String> file) async {
-    Map<String, String> updatedFile =
-        await _driveService.updateFile(file[ID], file[NAME], file[CONTENT]);
-    int indexOfUpdated;
-    for (int i = 0; i < driveContents.length; ++i) {
-      if (driveContents[i][ID] == updatedFile[ID]) {
-        indexOfUpdated = i;
-        break;
-      }
-    }
-    driveContents[indexOfUpdated] = updatedFile;
-    _notify();
+  void renameFile(String oldID, String newName) async {
+    drive.File newFile =
+        await _driveService.createFile(newName, contentMap[oldID]);
+    await _driveService.deleteFile(oldID);
+    metaMap[newFile.id] = newFile;
+    metaMap.remove(oldID);
+    contentMap[newFile.id] = contentMap[oldID];
+    contentMap.remove(oldID);
+    _contentListenerMap[newFile.id] = _contentListenerMap[oldID];
+    _contentListenerMap.remove(oldID);
+    _selected = newFile.id;
+//    if (getSelected() != null) {
+//      if (getSelected()[ID] == oldID) {
+//        selectFile(newFile.id);
+//      }
+//    }
+    _notifyMetaFilesListener();
+    _notifyContentListener(newFile.id);
+  }
+
+  void updateContent(String id, String content) async {
+    drive.File updatedMetaFile =
+        await _driveService.updateFileContent(metaMap[id], content);
+    metaMap[id] =
+        updatedMetaFile; // id is the same but other fields have changed.
+    contentMap[id] = content;
+    _notifyContentListener(id);
+  }
+
+  void renameAndUpdateContent(
+      String oldID, String newName, String newContent) async {
+    drive.File newFile = await _driveService.createFile(newName, newContent);
+    await _driveService.deleteFile(oldID);
+    metaMap[newFile.id] = newFile;
+    metaMap[newFile.id] = newFile;
+    metaMap.remove(oldID);
+    contentMap[newFile.id] = newContent;
+    contentMap.remove(oldID);
+    _contentListenerMap[newFile.id] = _contentListenerMap[oldID];
+    _contentListenerMap.remove(oldID);
+    _selected = newFile.id;
+    _notifyMetaFilesListener();
+    _notifyContentListener(newFile.id);
+    _notifyMetaFilesListener();
+    _notifyContentListener(newFile.id);
   }
 
   void addFile(String title, String content) async {
-    driveContents.insert(0, await _driveService.createFile(title, content));
-    _notify();
+    drive.File addedFile = await _driveService.createFile(title, content);
+    metaMap[addedFile.id] = addedFile;
+    _notifyMetaFilesListener();
   }
 
   void selectFile(String id) {
-    int indexToSelect;
-    for (int i = 0; i < driveContents.length; i++) {
-      if (driveContents[i][ID] == id) {
-        indexToSelect = i;
-        break;
-      }
-    }
-    _SelectedFile.setSelected(driveContents[indexToSelect]);
+    _selected = id;
+    subscribeToFileContent(id);
+//    Map<String, String> selected = Map();
+//    selected[ID] = id;
+//    selected[NAME] = metaMap[id].name;
+//    if (contentMap.containsKey(id)) {
+//      selected[CONTENT] = contentMap[id];
+//      _SelectedFile.setSelected(selected);
+//    } else {
+//      _SelectedFile.setSelected(selected);
+//      subscribeToFileContent(id);
+//    }
   }
 
-  void unselectFile() {
-    _SelectedFile.unselect();
-  }
+//  void unselectFile() {
+//    _SelectedFile.unselect();
+//  }
 
-  Map<String, String> getSelected() {
-    return _SelectedFile.getSelected();
+  String getSelected() {
+    return _selected;
   }
 
   void delete(String id) async {
-    int indexToRemove;
-    for (int i = 0; i < driveContents.length; i++) {
-      if (driveContents[i][ID] == id) {
-        indexToRemove = i;
-        break;
-      }
-    }
-    driveContents.removeAt(indexToRemove);
-    requests.ApiRequestError response = await _driveService.deleteFile(id);
-    if (response != null) {
-      print(response);
-      driveContents.clear();
-      updateList();
+    metaMap.remove(id);
+    contentMap.remove(id);
+    requests.ApiRequestError error = await _driveService.deleteFile(id);
+    if (error != null) {
+      print(error);
+      metaMap.clear();
+      contentMap.clear();
+      subscribeToMetaFiles();
     }
   }
 
-  void updateList() {
-    _driveService.updateDriveContents().listen((contents) {
-      driveContents.add(contents);
-      _notify();
+//  void updateList() {
+//    _driveService.updateDriveContents().listen((contents) {
+//      driveContents.add(contents);
+//      _notifyMetaFilesListener();
+//    });
+//  }
+
+  void registerMetaFilesListener(Function notify) {
+    _metaFilesListener = notify;
+  }
+
+  void registerContentListener(Function notify, String id) {
+    _contentListenerMap[id] = notify;
+  }
+
+  void subscribeToMetaFiles() {
+    _driveService.getMetaFiles().listen((map) {
+      metaMap = map;
+      _notifyMetaFilesListener();
     });
   }
 
-  void registerListener(Function notify) {
-    _listener = notify;
+  void subscribeToFileContent(String id) async {
+    //String content = await _driveService.getFileContents(id);
+    contentMap[id] = await _driveService.getFileContents(id);
+//    if (_SelectedFile.getSelected() != null) {
+//      if (!_SelectedFile.getSelected().containsKey(CONTENT)) {
+//        _SelectedFile.getSelected()[CONTENT] = content;
+//      }
+//    }
+    _notifyContentListener(id);
+  }
+
+  List<drive.File> getMetaFiles() {
+    List<drive.File> list = [];
+    for (var entry in metaMap.entries) {
+      list.add(entry.value);
+    }
+    return list;
   }
 
   static Drive of(BuildContext context) =>
