@@ -16,6 +16,7 @@ class MainModel extends Model {
   Map<String, String> _contentMap = Map();
   String _selectedID = '';
   bool isLoading = true;
+  bool signInCalled = false;
 
   bool get signedIn => _signedIn;
   Map<String, drive.File> get metaMap => _metaMap;
@@ -33,6 +34,7 @@ class MainModel extends Model {
       return;
     }
     try {
+      signInCalled = true;
       GoogleSignIn gsi = GoogleSignIn(scopes: <String>[
         drive.DriveApi.DriveAppdataScope,
         drive.DriveApi.DriveFileScope
@@ -76,6 +78,7 @@ class MainModel extends Model {
     isLoading = true;
     notifyListeners();
     try {
+      // TODO this is being requested continuously until we are loaded.
       String content = await DriveController.getFileContents(_driveApi, id);
       _contentMap[id] = content;
     } on Exception catch (e) {

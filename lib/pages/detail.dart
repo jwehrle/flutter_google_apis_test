@@ -13,7 +13,7 @@ class DetailState extends State<DetailPage> {
     return ScopedModelDescendant<MainModel>(
         builder: (BuildContext context, Widget child, MainModel model) {
       String id = model.selectedID;
-      if (!model.contentMap.containsKey(id)) {
+      if (!model.contentMap.containsKey(id) && !model.isLoading) {
         model.getFileContent(id);
       }
       return Scaffold(

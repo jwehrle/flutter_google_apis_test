@@ -21,7 +21,7 @@ class _HomePageState extends State<HomePage> {
         for (var id in model.metaMap.entries) {
           files.add(model.metaMap[id]);
         }
-      } else {
+      } else if (!model.signInCalled) {
         model.signIn();
       }
       return Scaffold(
