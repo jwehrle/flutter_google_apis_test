@@ -11,24 +11,13 @@ class EditState extends State<EditPage> {
   TextEditingController _nameController = TextEditingController();
   TextEditingController _contentController = TextEditingController();
 
-  Widget _buildNameField(MainModel model) {
-    if (_nameController.text.trim() == '') {
-      _nameController.text = model.metaMap[model.selectedID].name;
-    }
-    return TextField(
-      controller: _nameController,
-      decoration: InputDecoration(labelText: 'Title'),
-    );
-  }
-
-  Widget _buildContentField(MainModel model) {
-    if (_contentController.text.trim() == '') {
-      _contentController.text = model.contentMap[model.selectedID];
-    }
-    return TextField(
-      controller: _contentController,
-      decoration: InputDecoration(labelText: 'Title'),
-    );
+  @override
+  void initState() {
+    super.initState();
+    MainModel model = MainModel.getInstance();
+    String id = model.selectedID;
+    _nameController.text = model.getMetaFile(id).name;
+    _contentController.text = model.getFileContent(id);
   }
 
   @override
@@ -36,24 +25,35 @@ class EditState extends State<EditPage> {
     return ScopedModelDescendant<MainModel>(
         builder: (BuildContext context, Widget child, MainModel model) {
       String id = model.selectedID;
+      String name = model.getMetaFile(id).name;
+      String content = model.getFileContent(id);
       return Scaffold(
         appBar: new AppBar(
           title: new Text('File Editing'),
         ),
         body: ListView(
-          children: <Widget>[_buildNameField(model), _buildContentField(model)],
+          children: <Widget>[
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(labelText: 'Title'),
+            ),
+            TextField(
+              controller: _contentController,
+              decoration: InputDecoration(labelText: 'Title'),
+            )
+          ],
         ),
         floatingActionButton: new FloatingActionButton(
           onPressed: () {
-            if (model.metaMap[id].name != _nameController.text &&
-                model.contentMap[id] == _contentController.text) {
+            if (name != _nameController.text &&
+                content == _contentController.text) {
               model.renameFile(id, _nameController.text);
-            } else if (model.metaMap[id].name != _nameController.text &&
-                model.contentMap[id] != _contentController.text) {
+            } else if (name != _nameController.text &&
+                content != _contentController.text) {
               model.renameAndUpdateFileContents(
                   id, _nameController.text, _contentController.text);
-            } else if (model.metaMap[id].name == _nameController.text &&
-                model.contentMap[id] != _contentController.text) {
+            } else if (name == _nameController.text &&
+                content != _contentController.text) {
               model.updateFileContents(id, _contentController.text);
             }
             Navigator.pushNamed(context, '/');

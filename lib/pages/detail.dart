@@ -9,13 +9,21 @@ class DetailPage extends StatefulWidget {
 
 class DetailState extends State<DetailPage> {
   @override
+  void initState() {
+    super.initState();
+    MainModel model = MainModel.getInstance();
+    if (!model.hasContent(model.selectedID)) {
+      model.downloadFileContent(model.selectedID);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ScopedModelDescendant<MainModel>(
         builder: (BuildContext context, Widget child, MainModel model) {
       String id = model.selectedID;
-      if (!model.contentMap.containsKey(id) && !model.isLoading) {
-        model.getFileContent(id);
-      }
+      String name = model.getMetaFile(id).name;
+      String content = model.getFileContent(id);
       return Scaffold(
         appBar: new AppBar(
           title: new Text('File Details'),
@@ -29,20 +37,15 @@ class DetailState extends State<DetailPage> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
-                    model.metaMap[id].name,
+                    name,
                     style: TextStyle(fontSize: 30, fontStyle: FontStyle.italic),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: model.contentMap.containsKey(id)
-                      ? Text(
-                          model.contentMap[id],
-                          style: TextStyle(fontSize: 20),
-                        )
-                      : Center(
-                          child: CircularProgressIndicator(),
-                        ),
+                  child: content == null
+                      ? Center(child: CircularProgressIndicator())
+                      : Text(content, style: TextStyle(fontSize: 20)),
                 )
               ],
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_google_apis_test/models/main_model.dart';
+import 'package:flutter_google_apis_test/pages/time_line.dart';
 import './pages/home.dart';
 import './pages/detail.dart';
 import './pages/edit.dart';
@@ -14,12 +15,10 @@ class MyApp extends StatefulWidget {
 }
 
 class MyAppState extends State<MyApp> {
-  MainModel _model = MainModel();
-
   @override
   Widget build(BuildContext context) {
     return ScopedModel<MainModel>(
-      model: _model,
+      model: MainModel.getInstance(),
       child: MaterialApp(
         title: 'Drive Test',
         theme: new ThemeData(
@@ -29,7 +28,8 @@ class MyAppState extends State<MyApp> {
           '/': (context) => HomePage(),
           '/detail': (context) => DetailPage(),
           '/edit': (context) => EditPage(),
-          '/add': (context) => AddPage()
+          '/add': (context) => AddPage(),
+          '/time_line': (context) => TimeLinePage()
         },
       ),
     );

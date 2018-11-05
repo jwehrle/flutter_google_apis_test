@@ -12,16 +12,16 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  List<drive.File> files = [];
+
   @override
   Widget build(BuildContext context) {
     return ScopedModelDescendant<MainModel>(
         builder: (BuildContext context, Widget child, MainModel model) {
-      List<drive.File> files = [];
-      if (model.signedIn) {
-        for (var id in model.metaMap.entries) {
-          files.add(model.metaMap[id]);
-        }
-      } else if (!model.signInCalled) {
+      if (!model.isPrefLoading()) {
+        files = model.getMetaFileList();
+      }
+      if (!model.signInCalled) {
         model.signIn();
       }
       return Scaffold(
@@ -31,7 +31,7 @@ class _HomePageState extends State<HomePage> {
         body: _buildBasedOnModel(model),
         floatingActionButton: new FloatingActionButton(
           onPressed: () {
-            Navigator.pushNamed(context, '/add');
+            Navigator.pushNamed(context, '/time_line'); //'/add'
           },
           child: Icon(Icons.add),
         ),
@@ -51,15 +51,12 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    if (model.metaMap.isEmpty) {
+    if (files.isEmpty) {
       return ListView(
         children: <Widget>[],
       );
     }
-    List<drive.File> files = [];
-    model.metaMap.forEach((id, file) {
-      files.add(file);
-    });
+
     return ListView.builder(
         itemCount: files.length,
         itemBuilder: (context, index) {

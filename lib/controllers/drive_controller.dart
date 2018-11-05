@@ -3,6 +3,11 @@ import 'package:flutter_google_apis_test/app_drive_api/requests.dart'
     as requests;
 
 class DriveController {
+  static Future<drive.FileList> getMetaFileList(drive.DriveApi driveApi) async {
+    return await driveApi.files.list(
+        spaces: 'appDataFolder', $fields: 'files(id, name)', pageSize: 10);
+  }
+
   static Future<Map<String, drive.File>> getMetaFiles(
       drive.DriveApi driveApi) async {
     drive.FileList fileList = await driveApi.files.list(
