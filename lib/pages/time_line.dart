@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
-import 'package:flutter_google_apis_test/models/main_model.dart';
-import 'package:scoped_model/scoped_model.dart';
-import 'package:flutter_google_apis_test/app_drive_api/v3.dart' as drive;
-import 'package:flutter_google_apis_test/widgets/time_unit.dart';
-import 'package:bidirectional_scroll_view/bidirectional_scroll_view.dart';
+//import 'dart:math';
+//import 'package:flutter_google_apis_test/models/main_model.dart';
+//import 'package:scoped_model/scoped_model.dart';
+//import 'package:flutter_google_apis_test/app_drive_api/v3.dart' as drive;
+//import 'package:flutter_google_apis_test/widgets/time_unit.dart';
+//import 'package:bidirectional_scroll_view/bidirectional_scroll_view.dart';
 
 class TimeLinePage extends StatefulWidget {
   @override
@@ -71,69 +71,69 @@ class TimeLineState extends State<TimeLinePage> with TickerProviderStateMixin {
     dateTime = DateTime.now();
   }
 
-  Widget _itemBuilder(Color color, int index) {
-    return Opacity(
-      opacity: index.toDouble() / 10,
-      child: Container(
-        color: color,
-        width: 100,
-        height: 100,
-      ),
-    );
-  }
+//  Widget _itemBuilder(Color color, int index) {
+//    return Opacity(
+//      opacity: index.toDouble() / 10,
+//      child: Container(
+//        color: color,
+//        width: 100,
+//        height: 100,
+//      ),
+//    );
+//  }
 
-  Widget _buildRow(int rowIndex) {
-    Color color = Colors.black;
-    switch (rowIndex) {
-      case 0:
-        color = Colors.purple;
-        break;
-      case 1:
-        color = Colors.cyan;
-        break;
-      case 2:
-        color = Colors.deepOrange;
-        break;
-      case 3:
-        color = Colors.green;
-        break;
-      case 4:
-        color = Colors.pink;
-        break;
-      case 5:
-        color = Colors.amber;
-        break;
-      case 6:
-        color = Colors.lightBlue;
-        break;
-      case 7:
-        color = Colors.brown;
-        break;
-      case 8:
-        color = Colors.lightGreen;
-        break;
-      case 9:
-        color = Colors.lime;
-        break;
-    }
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: 10,
-      itemBuilder: (BuildContext context, int index) {
-        _itemBuilder(color, index);
-      },
-    );
-  }
+//  Widget _buildRow(int rowIndex) {
+//    Color color = Colors.black;
+//    switch (rowIndex) {
+//      case 0:
+//        color = Colors.purple;
+//        break;
+//      case 1:
+//        color = Colors.cyan;
+//        break;
+//      case 2:
+//        color = Colors.deepOrange;
+//        break;
+//      case 3:
+//        color = Colors.green;
+//        break;
+//      case 4:
+//        color = Colors.pink;
+//        break;
+//      case 5:
+//        color = Colors.amber;
+//        break;
+//      case 6:
+//        color = Colors.lightBlue;
+//        break;
+//      case 7:
+//        color = Colors.brown;
+//        break;
+//      case 8:
+//        color = Colors.lightGreen;
+//        break;
+//      case 9:
+//        color = Colors.lime;
+//        break;
+//    }
+//    return ListView.builder(
+//      scrollDirection: Axis.horizontal,
+//      itemCount: 10,
+//      itemBuilder: (BuildContext context, int index) {
+//        _itemBuilder(color, index);
+//      },
+//    );
+//  }
 
-  Widget _buildVerticalListView() {
-    return ListView.builder(
-      scrollDirection: Axis.vertical,
-      itemCount: 10,
-      itemBuilder: (BuildContext context, int index) {
-        _buildRow(index);
-      },
-    );
-  }
+//  Widget _buildVerticalListView() {
+//    return ListView.builder(
+//      scrollDirection: Axis.vertical,
+//      itemCount: 10,
+//      itemBuilder: (BuildContext context, int index) {
+//        _buildRow(index);
+//      },
+//    );
+//  }
 
   @override
   Widget build(BuildContext context) {

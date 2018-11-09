@@ -46,7 +46,7 @@ class AddState extends State<AddPage> {
         ),
         floatingActionButton: new FloatingActionButton(
           onPressed: () {
-            model.uploadFile(titleController.text, contentController.text);
+            model.uploadNewFile(titleController.text, contentController.text);
             Navigator.pushNamed(context, '/');
           },
           child: Icon(Icons.check),

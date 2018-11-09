@@ -20,12 +20,11 @@ dependencies:
   google_sign_in:
   firebase_auth:
   scoped_model:
-  pull_to_refresh:
   rxdart:
-  bloc:
   http:
-  bidirectional_scroll_view:
   shared_preferences:
+  firebase_database:
+  uuid:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

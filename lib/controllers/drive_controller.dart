@@ -2,7 +2,7 @@ import 'package:flutter_google_apis_test/app_drive_api/v3.dart' as drive;
 import 'package:flutter_google_apis_test/app_drive_api/requests.dart'
     as requests;
 
-class DriveController {
+class Drive {
   static Future<drive.FileList> getMetaFileList(drive.DriveApi driveApi) async {
     return await driveApi.files.list(
         spaces: 'appDataFolder', $fields: 'files(id, name)', pageSize: 10);
@@ -17,6 +17,12 @@ class DriveController {
       metaMap[meta.id] = meta;
     }
     return metaMap;
+  }
+
+  static Future<drive.File> getMetaFile(
+      drive.DriveApi driveApi, String id) async {
+    return await driveApi.files
+        .get(id, downloadOptions: requests.DownloadOptions.Metadata);
   }
 
   static Future<String> getFileContents(

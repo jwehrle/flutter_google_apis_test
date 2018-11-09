@@ -3,12 +3,23 @@ import 'package:flutter_google_apis_test/app_drive_api/v3.dart' as drive;
 import 'package:flutter_google_apis_test/controllers/drive_controller.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_google_apis_test/controllers/local_storage_controller.dart';
+import 'package:flutter_google_apis_test/controllers/storage_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter_google_apis_test/models/change.dart';
+import 'dart:convert';
 
 class MainModel extends Model {
+  final String CHANGE_LOG_REF = 'changeLog';
   SharedPreferences pref;
   GoogleSignInAccount _googleSignInAccount;
+  String accessToken;
+  String idToken;
+
+  FirebaseUser _firebaseUser;
+  FirebaseAuth _firebaseAuth;
+  var changeLogStream;
   bool _signedIn = false;
   drive.DriveApi _driveApi;
   String _selectedID = '';
@@ -26,6 +37,7 @@ class MainModel extends Model {
   static MainModel _instance;
 
   MainModel._() {
+    _firebaseAuth = FirebaseAuth.instance;
     SharedPreferences.getInstance().then((preferences) {
       pref = preferences;
     });
@@ -38,6 +50,16 @@ class MainModel extends Model {
     return _instance;
   }
 
+  void _saveToChangeLog(String action, String id) async {
+    Change change = Change(action, id);
+    Storage.saveChange(pref, change);
+    FirebaseDatabase.instance
+        .reference()
+        .child(_firebaseUser.uid)
+        .push()
+        .set(change.toJsonString());
+  }
+
   bool isPrefLoading() {
     return pref == null;
   }
@@ -48,16 +70,36 @@ class MainModel extends Model {
     }
     try {
       signInCalled = true;
-      GoogleSignIn gsi = GoogleSignIn(scopes: <String>[
+      GoogleSignIn googleSignIn = GoogleSignIn(scopes: <String>[
         drive.DriveApi.DriveAppdataScope,
         drive.DriveApi.DriveFileScope
       ]);
-      gsi.signIn().then((account) async {
+      googleSignIn.signIn().then((account) async {
         _googleSignInAccount = account;
-        _signedIn = true;
         _googleSignInAccount.authHeaders.then((headers) {
           _driveApi = drive.DriveApi(http.Client(), headers);
-          downloadMetaFiles();
+          _googleSignInAccount.authentication
+              .then((googleSignInAuthentication) {
+            idToken = googleSignInAuthentication.idToken;
+            accessToken = googleSignInAuthentication.accessToken;
+            _firebaseAuth
+                .signInWithGoogle(
+                    idToken: googleSignInAuthentication.idToken,
+                    accessToken: googleSignInAuthentication.accessToken)
+                .then((user) {
+              _firebaseUser = user;
+              _signedIn = true;
+              downloadMetaFiles();
+              Storage.deleteChangeLogs(pref); //Delete old change logs at start
+              changeLogStream = FirebaseDatabase.instance
+                  .reference()
+                  .child(_firebaseUser.uid)
+                  .onChildAdded
+                  .listen((changeEvent) {
+                _handleChangeEvent(changeEvent);
+              });
+            });
+          });
         });
       });
     } on Exception catch (e) {
@@ -71,31 +113,69 @@ class MainModel extends Model {
     notifyListeners();
   }
 
+  void _handleChangeEvent(Event changeEvent) async {
+    if (changeEvent == null) {
+      return;
+    }
+    if (changeEvent.snapshot == null) {
+      return;
+    }
+    if (changeEvent.snapshot.value == null) {
+      return;
+    }
+    Change change = Change.fromJson(json.decode(changeEvent.snapshot.value));
+    var changeMap = await Storage.getLocalChanges(pref);
+    if (changeMap.containsKey(change.changeID)) {
+      return;
+    }
+    switch (change.action) {
+      case Change.CREATED:
+        Drive.getMetaFile(_driveApi, change.fileID).then((metaFile) {
+          Storage.putMetaFile(pref, metaFile.id, metaFile);
+          notifyListeners();
+        });
+        break;
+      case Change.UPDATED:
+        if (Storage.containsContent(pref, change.fileID)) {
+          Drive.getFileContents(_driveApi, change.fileID).then((content) {
+            Storage.putFileContent(pref, change.fileID, content);
+            notifyListeners();
+          });
+        }
+        break;
+      case Change.DELETED:
+        Storage.deleteMeta(pref, change.fileID);
+        Storage.deleteContent(pref, change.fileID);
+        notifyListeners();
+        break;
+    }
+  }
+
   bool hasContent(String id) {
-    return StorageController.getInstance().containsContent(pref, id);
+    return Storage.containsContent(pref, id);
   }
 
   String getFileContent(String id) {
-    return StorageController.getInstance().getFileContent(pref, id);
+    return Storage.getFileContent(pref, id);
   }
 
   drive.File getMetaFile(String id) {
-    return StorageController.getInstance().getMetaFile(pref, id);
+    return Storage.getMetaFile(pref, id);
   }
 
   List<drive.File> getMetaFileList() {
-    return StorageController.getInstance().getMetaFileList(pref);
+    return Storage.getMetaFileList(pref);
   }
+
+  void syncFromChangeLog() {}
 
   void downloadMetaFiles() async {
     isLoading = true;
     notifyListeners();
     try {
-      drive.FileList fileList =
-          await DriveController.getMetaFileList(_driveApi);
-      StorageController storage = StorageController.getInstance();
+      drive.FileList fileList = await Drive.getMetaFileList(_driveApi);
       for (drive.File file in fileList.files) {
-        storage.putMetaFile(pref, file.id, file);
+        Storage.putMetaFile(pref, file.id, file);
       }
     } on Exception catch (e) {
       print(e.toString());
@@ -108,8 +188,8 @@ class MainModel extends Model {
     isLoading = true;
     notifyListeners();
     try {
-      String content = await DriveController.getFileContents(_driveApi, id);
-      StorageController.getInstance().putFileContent(pref, id, content);
+      String content = await Drive.getFileContents(_driveApi, id);
+      Storage.putFileContent(pref, id, content);
     } on Exception catch (e) {
       print(e.toString());
     }
@@ -117,14 +197,13 @@ class MainModel extends Model {
     notifyListeners();
   }
 
-  void uploadFile(String name, String content) async {
+  void uploadNewFile(String name, String content) async {
     isLoading = true;
     notifyListeners();
     try {
-      drive.File metaFile =
-          await DriveController.createFile(_driveApi, name, content);
-      StorageController storage = StorageController.getInstance();
-      storage.putMetaFile(pref, metaFile.id, metaFile);
+      drive.File metaFile = await Drive.createFile(_driveApi, name, content);
+      Storage.putMetaFile(pref, metaFile.id, metaFile);
+      _saveToChangeLog(Change.CREATED, metaFile.id);
     } on Exception catch (e) {
       print(e.toString());
     }
@@ -136,10 +215,10 @@ class MainModel extends Model {
     isLoading = true;
     notifyListeners();
     try {
-      StorageController storage = StorageController.getInstance();
-      storage.deleteMeta(pref, id);
-      storage.deleteContent(pref, id);
-      await DriveController.deleteFile(_driveApi, id);
+      Storage.deleteMeta(pref, id);
+      Storage.deleteContent(pref, id);
+      await Drive.deleteFile(_driveApi, id);
+      _saveToChangeLog(Change.DELETED, id);
     } on Exception catch (e) {
       print(e.toString());
     }
@@ -151,11 +230,11 @@ class MainModel extends Model {
     isLoading = true;
     notifyListeners();
     try {
-      StorageController storage = StorageController.getInstance();
-      drive.File file = await DriveController.updateFileContents(
-          _driveApi, storage.getMetaFile(pref, id), content);
-      storage.putMetaFile(pref, id, file);
-      storage.putFileContent(pref, id, content);
+      drive.File file = await Drive.updateFileContents(
+          _driveApi, Storage.getMetaFile(pref, id), content);
+      Storage.putMetaFile(pref, id, file);
+      Storage.putFileContent(pref, id, content);
+      _saveToChangeLog(Change.UPDATED, id);
     } on Exception catch (e) {
       print(e.toString());
     }
@@ -167,15 +246,16 @@ class MainModel extends Model {
     isLoading = true;
     notifyListeners();
     try {
-      await DriveController.deleteFile(_driveApi, oldID);
-      StorageController storage = StorageController.getInstance();
-      drive.File metaFile = await DriveController.createFile(
-          _driveApi, newName, storage.getFileContent(pref, oldID));
-      storage.putMetaFile(pref, metaFile.id, metaFile);
-      storage.deleteMeta(pref, oldID);
-      storage.putFileContent(
-          pref, metaFile.id, storage.getFileContent(pref, oldID));
-      storage.deleteContent(pref, oldID);
+      await Drive.deleteFile(_driveApi, oldID);
+      drive.File metaFile = await Drive.createFile(
+          _driveApi, newName, Storage.getFileContent(pref, oldID));
+      Storage.putMetaFile(pref, metaFile.id, metaFile);
+      Storage.deleteMeta(pref, oldID);
+      Storage.putFileContent(
+          pref, metaFile.id, Storage.getFileContent(pref, oldID));
+      Storage.deleteContent(pref, oldID);
+      _saveToChangeLog(Change.DELETED, oldID);
+      _saveToChangeLog(Change.CREATED, metaFile.id);
       if (_selectedID == oldID) {
         _selectedID = metaFile.id;
       }
@@ -191,14 +271,15 @@ class MainModel extends Model {
     isLoading = true;
     notifyListeners();
     try {
-      await DriveController.deleteFile(_driveApi, oldID);
+      await Drive.deleteFile(_driveApi, oldID);
       drive.File metaFile =
-          await DriveController.createFile(_driveApi, newName, newContent);
-      StorageController storage = StorageController.getInstance();
-      storage.putMetaFile(pref, metaFile.id, metaFile);
-      storage.deleteMeta(pref, oldID);
-      storage.putFileContent(pref, metaFile.id, newContent);
-      storage.deleteContent(pref, oldID);
+          await Drive.createFile(_driveApi, newName, newContent);
+      Storage.putMetaFile(pref, metaFile.id, metaFile);
+      Storage.deleteMeta(pref, oldID);
+      Storage.putFileContent(pref, metaFile.id, newContent);
+      Storage.deleteContent(pref, oldID);
+      _saveToChangeLog(Change.DELETED, oldID);
+      _saveToChangeLog(Change.CREATED, metaFile.id);
       if (_selectedID == oldID) {
         _selectedID = metaFile.id;
       }
