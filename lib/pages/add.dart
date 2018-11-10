@@ -19,30 +19,24 @@ class AddState extends State<AddPage> {
         appBar: new AppBar(
           title: new Text('Add A File'),
         ),
-        body: Container(
-          constraints: BoxConstraints.expand(width: double.maxFinite),
-          child: Padding(
-            padding: EdgeInsets.all(18.0),
-            child: Column(
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextField(
-                    controller: titleController,
-                    decoration: InputDecoration(labelText: 'Title'),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextField(
-                    controller: contentController,
-                    maxLines: 20,
-                    decoration: InputDecoration(labelText: 'Content'),
-                  ),
-                )
-              ],
+        body: ListView(
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: titleController,
+                decoration: InputDecoration(labelText: 'Title'),
+              ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: contentController,
+                maxLines: 20,
+                decoration: InputDecoration(labelText: 'Content'),
+              ),
+            )
+          ],
         ),
         floatingActionButton: new FloatingActionButton(
           onPressed: () {

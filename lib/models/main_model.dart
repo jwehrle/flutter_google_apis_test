@@ -40,6 +40,7 @@ class MainModel extends Model {
     _firebaseAuth = FirebaseAuth.instance;
     SharedPreferences.getInstance().then((preferences) {
       pref = preferences;
+      Storage.initStorage(pref);
     });
   }
 
@@ -50,14 +51,29 @@ class MainModel extends Model {
     return _instance;
   }
 
-  void _saveToChangeLog(String action, String id) async {
+  Future _saveToChangeLog(String action, String id) async {
     Change change = Change(action, id);
     Storage.saveChange(pref, change);
     FirebaseDatabase.instance
         .reference()
         .child(_firebaseUser.uid)
         .push()
-        .set(change.toJsonString());
+        .set(change.toJsonString())
+        .then((resp) {
+      print('worked');
+    }, onError: (e) {
+      print(e.toString());
+    });
+  }
+
+  void _startedLoading() {
+    isLoading = true;
+    notifyListeners();
+  }
+
+  void _finishedLoading() {
+    isLoading = false;
+    notifyListeners();
   }
 
   bool isPrefLoading() {
@@ -90,7 +106,9 @@ class MainModel extends Model {
               _firebaseUser = user;
               _signedIn = true;
               downloadMetaFiles();
-              Storage.deleteChangeLogs(pref); //Delete old change logs at start
+//              Storage.deleteChangeLogs(pref); //Delete old change logs at start
+//              Storage.deleteLocalFileContents(
+//                  pref); // One copy of data and it lives on GDrive.
               changeLogStream = FirebaseDatabase.instance
                   .reference()
                   .child(_firebaseUser.uid)
@@ -131,6 +149,7 @@ class MainModel extends Model {
     switch (change.action) {
       case Change.CREATED:
         Drive.getMetaFile(_driveApi, change.fileID).then((metaFile) {
+          Storage.saveChange(pref, change);
           Storage.putMetaFile(pref, metaFile.id, metaFile);
           notifyListeners();
         });
@@ -138,6 +157,7 @@ class MainModel extends Model {
       case Change.UPDATED:
         if (Storage.containsContent(pref, change.fileID)) {
           Drive.getFileContents(_driveApi, change.fileID).then((content) {
+            Storage.saveChange(pref, change);
             Storage.putFileContent(pref, change.fileID, content);
             notifyListeners();
           });
@@ -146,6 +166,7 @@ class MainModel extends Model {
       case Change.DELETED:
         Storage.deleteMeta(pref, change.fileID);
         Storage.deleteContent(pref, change.fileID);
+        Storage.saveChange(pref, change);
         notifyListeners();
         break;
     }
@@ -170,123 +191,132 @@ class MainModel extends Model {
   void syncFromChangeLog() {}
 
   void downloadMetaFiles() async {
-    isLoading = true;
-    notifyListeners();
-    try {
-      drive.FileList fileList = await Drive.getMetaFileList(_driveApi);
-      for (drive.File file in fileList.files) {
+    _startedLoading();
+    Drive.getMetaFileList(_driveApi).then((fileList) {
+      fileList.files.forEach((file) {
         Storage.putMetaFile(pref, file.id, file);
-      }
-    } on Exception catch (e) {
-      print(e.toString());
-    }
-    isLoading = false;
-    notifyListeners();
+      });
+      _finishedLoading();
+    }, onError: () {
+      print('PROBLEM DOWNLOADING META FILES.');
+      _finishedLoading();
+    });
   }
 
   void downloadFileContent(String id) async {
-    isLoading = true;
-    notifyListeners();
-    try {
-      String content = await Drive.getFileContents(_driveApi, id);
+    _startedLoading();
+    Drive.getFileContents(_driveApi, id).then((content) {
       Storage.putFileContent(pref, id, content);
-    } on Exception catch (e) {
-      print(e.toString());
-    }
-    isLoading = false;
-    notifyListeners();
+      _finishedLoading();
+    }, onError: () {
+      print('PROBLEM DOWNLOADING FILE CONTENT.');
+      _finishedLoading();
+    });
   }
 
   void uploadNewFile(String name, String content) async {
-    isLoading = true;
-    notifyListeners();
-    try {
-      drive.File metaFile = await Drive.createFile(_driveApi, name, content);
+    _startedLoading();
+    Drive.createFile(_driveApi, name, content).then((metaFile) {
       Storage.putMetaFile(pref, metaFile.id, metaFile);
       _saveToChangeLog(Change.CREATED, metaFile.id);
-    } on Exception catch (e) {
-      print(e.toString());
-    }
-    isLoading = false;
-    notifyListeners();
+      _finishedLoading();
+    }, onError: () {
+      print('PROBLEM UPLOADING NEW FILE.');
+      _finishedLoading();
+    });
   }
 
   void deleteFile(String id) async {
-    isLoading = true;
-    notifyListeners();
-    try {
+    _startedLoading();
+    Drive.deleteFile(_driveApi, id).then((_) {
+      _saveToChangeLog(Change.DELETED, id);
       Storage.deleteMeta(pref, id);
       Storage.deleteContent(pref, id);
-      await Drive.deleteFile(_driveApi, id);
-      _saveToChangeLog(Change.DELETED, id);
-    } on Exception catch (e) {
-      print(e.toString());
-    }
-    isLoading = false;
-    notifyListeners();
+      _finishedLoading();
+    }, onError: () {
+      print('PROBLEM DELETING FILE.');
+      _finishedLoading();
+    });
   }
 
   void updateFileContents(String id, String content) async {
-    isLoading = true;
-    notifyListeners();
-    try {
-      drive.File file = await Drive.updateFileContents(
-          _driveApi, Storage.getMetaFile(pref, id), content);
+    _startedLoading();
+    Drive.updateFileContents(_driveApi, Storage.getMetaFile(pref, id), content)
+        .then((file) {
       Storage.putMetaFile(pref, id, file);
       Storage.putFileContent(pref, id, content);
       _saveToChangeLog(Change.UPDATED, id);
-    } on Exception catch (e) {
-      print(e.toString());
-    }
-    isLoading = false;
-    notifyListeners();
+      _finishedLoading();
+    }, onError: () {
+      print('PROBLEM UPDATING FILE CONTENTS.');
+      _finishedLoading();
+    });
   }
 
   void renameFile(String oldID, String newName) async {
-    isLoading = true;
-    notifyListeners();
-    try {
-      await Drive.deleteFile(_driveApi, oldID);
-      drive.File metaFile = await Drive.createFile(
-          _driveApi, newName, Storage.getFileContent(pref, oldID));
-      Storage.putMetaFile(pref, metaFile.id, metaFile);
-      Storage.deleteMeta(pref, oldID);
-      Storage.putFileContent(
-          pref, metaFile.id, Storage.getFileContent(pref, oldID));
-      Storage.deleteContent(pref, oldID);
-      _saveToChangeLog(Change.DELETED, oldID);
-      _saveToChangeLog(Change.CREATED, metaFile.id);
-      if (_selectedID == oldID) {
-        _selectedID = metaFile.id;
-      }
-    } on Exception catch (e) {
-      print(e.toString());
-    }
-    isLoading = false;
-    notifyListeners();
+    _startedLoading();
+    Drive.createFile(_driveApi, newName, Storage.getFileContent(pref, oldID))
+        .then((metaFile) {
+      Drive.deleteFile(_driveApi, oldID).then((_) {
+        Storage.putMetaFile(pref, metaFile.id, metaFile);
+        Storage.deleteMeta(pref, oldID);
+        Storage.putFileContent(
+            pref, metaFile.id, Storage.getFileContent(pref, oldID));
+        Storage.deleteContent(pref, oldID);
+        if (_selectedID == oldID) {
+          _selectedID = metaFile.id;
+        }
+        _saveToChangeLog(Change.CREATED, metaFile.id).then((_) {
+          _saveToChangeLog(Change.DELETED, oldID).then((_) {
+            _finishedLoading();
+          }, onError: () {
+            print('PROBLEM SAVING DELETED CHANGE.');
+            _finishedLoading();
+          });
+        }, onError: () {
+          print('PROBLEM SAVING CREATED CHANGE.');
+          _finishedLoading();
+        });
+      }, onError: () {
+        print('PROBLEM DELETING THE OLD FILE.');
+        _finishedLoading();
+      });
+    }, onError: () {
+      print('PROBLEM CREATING THE RENAMED FILE.');
+      _finishedLoading();
+    });
   }
 
   void renameAndUpdateFileContents(
       String oldID, String newName, String newContent) async {
-    isLoading = true;
-    notifyListeners();
-    try {
-      await Drive.deleteFile(_driveApi, oldID);
-      drive.File metaFile =
-          await Drive.createFile(_driveApi, newName, newContent);
-      Storage.putMetaFile(pref, metaFile.id, metaFile);
-      Storage.deleteMeta(pref, oldID);
-      Storage.putFileContent(pref, metaFile.id, newContent);
-      Storage.deleteContent(pref, oldID);
-      _saveToChangeLog(Change.DELETED, oldID);
-      _saveToChangeLog(Change.CREATED, metaFile.id);
-      if (_selectedID == oldID) {
-        _selectedID = metaFile.id;
-      }
-    } on Exception catch (e) {
-      print(e.toString());
-    }
-    isLoading = false;
-    notifyListeners();
+    _startedLoading();
+    Drive.createFile(_driveApi, newName, newContent).then((metaFile) {
+      Drive.deleteFile(_driveApi, oldID).then((_) {
+        Storage.putMetaFile(pref, metaFile.id, metaFile);
+        Storage.deleteMeta(pref, oldID);
+        Storage.putFileContent(pref, metaFile.id, newContent);
+        Storage.deleteContent(pref, oldID);
+        if (_selectedID == oldID) {
+          _selectedID = metaFile.id;
+        }
+        _saveToChangeLog(Change.CREATED, metaFile.id).then((_) {
+          _saveToChangeLog(Change.DELETED, oldID).then((_) {
+            _finishedLoading();
+          }, onError: () {
+            print('PROBLEM SAVING DELETED CHANGE.');
+            _finishedLoading();
+          });
+        }, onError: () {
+          print('PROBLEM SAVING CREATED CHANGE.');
+          _finishedLoading();
+        });
+      }, onError: () {
+        print('PROBLEM DELETING THE OLD FILE.');
+        _finishedLoading();
+      });
+    }, onError: () {
+      print('PROBLEM CREATING THE RENAMED FILE.');
+      _finishedLoading();
+    });
   }
 }

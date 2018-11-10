@@ -12,14 +12,27 @@ class Storage {
   static const String CHANGE_PREFIX = 'change_';
 
   static void deleteChangeLogs(SharedPreferences pref) async {
-    var changeMap = await getLocalChanges(pref);
-    changeMap.forEach((id, change) {
-      pref.remove(CHANGE_PREFIX + id);
+    pref.getKeys().forEach((key) {
+      if (key.startsWith(CHANGE_PREFIX)) {
+        pref.remove(key);
+      }
+    });
+  }
+
+  static void deleteLocalFileContents(SharedPreferences pref) async {
+    pref.getKeys().forEach((key) {
+      if (key.startsWith(FILE_CONTENT_PREFIX)) {
+        pref.remove(key);
+      }
     });
   }
 
   static void saveChange(SharedPreferences pref, Change change) async {
     pref.setString(CHANGE_PREFIX + change.changeID, change.toJsonString());
+  }
+
+  static void initStorage(SharedPreferences pref) {
+    pref.clear();
   }
 
   static Future<Map<String, Change>> getLocalChanges(

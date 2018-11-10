@@ -39,7 +39,7 @@ class EditState extends State<EditPage> {
             ),
             TextField(
               controller: _contentController,
-              decoration: InputDecoration(labelText: 'Title'),
+              decoration: InputDecoration(labelText: 'Content'),
             )
           ],
         ),

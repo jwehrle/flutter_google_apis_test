@@ -50,7 +50,7 @@ class Drive {
         Stream.fromFuture(_getBytes(content)), content.codeUnits.length);
     createdFile = await driveApi.files.create(createdFile,
         uploadMedia: media,
-        $fields: 'id, name, parents',
+        $fields: 'id, name',
         useContentAsIndexableText: true);
     return createdFile;
   }
@@ -70,15 +70,10 @@ class Drive {
     driveApi.files
         .update(file, file.id,
             uploadMedia: media,
-            $fields: 'id, name, parents',
+            $fields: 'id, name',
             useContentAsIndexableText: true)
         .then((drive.File f) {
-      print('Successful update. Name: ' +
-          f.name +
-          ', ID: ' +
-          f.id +
-          ', parent: ' +
-          f.parents.toString());
+      print('Successful update. Name: ' + f.name + ', ID: ' + f.id);
       file = f;
     }, onError: (e) {
       file = null;
