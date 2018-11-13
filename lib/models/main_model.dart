@@ -60,7 +60,7 @@ class MainModel extends Model {
         .push()
         .set(change.toJsonString())
         .then((resp) {
-      print('worked');
+      print('Saved change to ChangeLog');
     }, onError: (e) {
       print(e.toString());
     });
@@ -114,7 +114,7 @@ class MainModel extends Model {
                   .child(_firebaseUser.uid)
                   .onChildAdded
                   .listen((changeEvent) {
-                _handleChangeEvent(changeEvent);
+                //_handleChangeEvent(changeEvent);//TODO this is being called for everything.
               });
             });
           });
@@ -239,18 +239,21 @@ class MainModel extends Model {
     });
   }
 
-  void updateFileContents(String id, String content) async {
+  void updateFileContents(String id, String name, String content) async {
     _startedLoading();
-    Drive.updateFileContents(_driveApi, Storage.getMetaFile(pref, id), content)
-        .then((file) {
-      Storage.putMetaFile(pref, id, file);
-      Storage.putFileContent(pref, id, content);
-      _saveToChangeLog(Change.UPDATED, id);
-      _finishedLoading();
-    }, onError: () {
-      print('PROBLEM UPDATING FILE CONTENTS.');
-      _finishedLoading();
-    });
+    Drive.updateFileContents(
+        _driveApi, id, name, content, _onFileUpdated, _onUpdateFailed);
+  }
+
+  void _onFileUpdated(drive.File file, String content) {
+    Storage.putMetaFile(pref, file.id, file);
+    Storage.putFileContent(pref, file.id, content);
+    _saveToChangeLog(Change.UPDATED, file.id);
+    _finishedLoading();
+  }
+
+  void _onUpdateFailed() {
+    _finishedLoading();
   }
 
   void renameFile(String oldID, String newName) async {

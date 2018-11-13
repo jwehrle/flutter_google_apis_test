@@ -63,22 +63,23 @@ class Drive {
     return driveApi.files.delete(id);
   }
 
-  static Future<drive.File> updateFileContents(
-      drive.DriveApi driveApi, drive.File file, String content) async {
+  static void updateFileContents(
+      drive.DriveApi driveApi,
+      String id,
+      String name,
+      String content,
+      Function onFileUpdated,
+      Function onUpdateFailed) async {
+    drive.File metaData = drive.File();
+    metaData.name = name;
     var media = requests.Media(
         Stream.fromFuture(_getBytes(content)), content.codeUnits.length);
     driveApi.files
-        .update(file, file.id,
-            uploadMedia: media,
-            $fields: 'id, name',
-            useContentAsIndexableText: true)
+        .update(metaData, id, uploadMedia: media, $fields: 'id, name')
         .then((drive.File f) {
-      print('Successful update. Name: ' + f.name + ', ID: ' + f.id);
-      file = f;
+      onFileUpdated(f, content);
     }, onError: (e) {
-      file = null;
-      print('Failed to upload file: ' + e.toString());
+      onUpdateFailed();
     });
-    return file;
   }
 }

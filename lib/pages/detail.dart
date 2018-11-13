@@ -53,7 +53,7 @@ class DetailState extends State<DetailPage> {
         ),
         floatingActionButton: new FloatingActionButton(
           onPressed: () {
-            Navigator.pushNamed(context, '/edit');
+            Navigator.popAndPushNamed(context, '/edit');
           },
           child: Icon(Icons.edit),
         ),

@@ -54,7 +54,8 @@ class EditState extends State<EditPage> {
                   id, _nameController.text, _contentController.text);
             } else if (name == _nameController.text &&
                 content != _contentController.text) {
-              model.updateFileContents(id, _contentController.text);
+              model.updateFileContents(
+                  id, _nameController.text, _contentController.text);
             }
             Navigator.pushNamed(context, '/');
           },

@@ -223,7 +223,7 @@ class ApiRequester {
 
       if (uploadOptions is client_requests.ResumableUploadOptions) {
         var helper = ResumableMediaUploader(_httpClient, uploadMedia, body, uri,
-            method, uploadOptions, _userAgent);
+            method, uploadOptions, _userAgent, _authHeaders);
         return helper.upload();
       }
 
@@ -398,9 +398,17 @@ class ResumableMediaUploader {
   final String _method;
   final client_requests.ResumableUploadOptions _options;
   final String _userAgent;
+  final Map<String, String> _authHeaders;
 
-  ResumableMediaUploader(this._httpClient, this._uploadMedia, this._body,
-      this._uri, this._method, this._options, this._userAgent);
+  ResumableMediaUploader(
+      this._httpClient,
+      this._uploadMedia,
+      this._body,
+      this._uri,
+      this._method,
+      this._options,
+      this._userAgent,
+      this._authHeaders);
 
   /**
    * Returns the final [http.StreamedResponse] if the upload succeded and
@@ -623,7 +631,8 @@ class ResumableMediaUploader {
 
     var stream = _listOfBytes2Stream(chunk.byteArrays);
     var request = _RequestImpl('PUT', uri, stream);
-    request.headers.addAll(headers);
+    request.headers.addAll(headers); //TODO add _authHeaders
+    request.headers.addAll(_authHeaders);
     return _httpClient.send(request);
   }
 
