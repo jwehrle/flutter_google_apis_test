@@ -63,7 +63,7 @@ class Drive {
     return driveApi.files.delete(id);
   }
 
-  static void updateFileContents(
+  static void updateFile(
       drive.DriveApi driveApi,
       String id,
       String name,

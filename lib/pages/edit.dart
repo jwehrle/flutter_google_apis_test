@@ -45,18 +45,8 @@ class EditState extends State<EditPage> {
         ),
         floatingActionButton: new FloatingActionButton(
           onPressed: () {
-            if (name != _nameController.text &&
-                content == _contentController.text) {
-              model.renameFile(id, _nameController.text);
-            } else if (name != _nameController.text &&
-                content != _contentController.text) {
-              model.renameAndUpdateFileContents(
-                  id, _nameController.text, _contentController.text);
-            } else if (name == _nameController.text &&
-                content != _contentController.text) {
-              model.updateFileContents(
-                  id, _nameController.text, _contentController.text);
-            }
+            model.updateFile(
+                id, _nameController.text, _contentController.text);
             Navigator.pushNamed(context, '/');
           },
           child: Icon(Icons.check),

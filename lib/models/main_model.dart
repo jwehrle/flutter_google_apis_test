@@ -239,9 +239,9 @@ class MainModel extends Model {
     });
   }
 
-  void updateFileContents(String id, String name, String content) async {
+  void updateFile(String id, String name, String content) async {
     _startedLoading();
-    Drive.updateFileContents(
+    Drive.updateFile(
         _driveApi, id, name, content, _onFileUpdated, _onUpdateFailed);
   }
 
@@ -254,72 +254,5 @@ class MainModel extends Model {
 
   void _onUpdateFailed() {
     _finishedLoading();
-  }
-
-  void renameFile(String oldID, String newName) async {
-    _startedLoading();
-    Drive.createFile(_driveApi, newName, Storage.getFileContent(pref, oldID))
-        .then((metaFile) {
-      Drive.deleteFile(_driveApi, oldID).then((_) {
-        Storage.putMetaFile(pref, metaFile.id, metaFile);
-        Storage.deleteMeta(pref, oldID);
-        Storage.putFileContent(
-            pref, metaFile.id, Storage.getFileContent(pref, oldID));
-        Storage.deleteContent(pref, oldID);
-        if (_selectedID == oldID) {
-          _selectedID = metaFile.id;
-        }
-        _saveToChangeLog(Change.CREATED, metaFile.id).then((_) {
-          _saveToChangeLog(Change.DELETED, oldID).then((_) {
-            _finishedLoading();
-          }, onError: () {
-            print('PROBLEM SAVING DELETED CHANGE.');
-            _finishedLoading();
-          });
-        }, onError: () {
-          print('PROBLEM SAVING CREATED CHANGE.');
-          _finishedLoading();
-        });
-      }, onError: () {
-        print('PROBLEM DELETING THE OLD FILE.');
-        _finishedLoading();
-      });
-    }, onError: () {
-      print('PROBLEM CREATING THE RENAMED FILE.');
-      _finishedLoading();
-    });
-  }
-
-  void renameAndUpdateFileContents(
-      String oldID, String newName, String newContent) async {
-    _startedLoading();
-    Drive.createFile(_driveApi, newName, newContent).then((metaFile) {
-      Drive.deleteFile(_driveApi, oldID).then((_) {
-        Storage.putMetaFile(pref, metaFile.id, metaFile);
-        Storage.deleteMeta(pref, oldID);
-        Storage.putFileContent(pref, metaFile.id, newContent);
-        Storage.deleteContent(pref, oldID);
-        if (_selectedID == oldID) {
-          _selectedID = metaFile.id;
-        }
-        _saveToChangeLog(Change.CREATED, metaFile.id).then((_) {
-          _saveToChangeLog(Change.DELETED, oldID).then((_) {
-            _finishedLoading();
-          }, onError: () {
-            print('PROBLEM SAVING DELETED CHANGE.');
-            _finishedLoading();
-          });
-        }, onError: () {
-          print('PROBLEM SAVING CREATED CHANGE.');
-          _finishedLoading();
-        });
-      }, onError: () {
-        print('PROBLEM DELETING THE OLD FILE.');
-        _finishedLoading();
-      });
-    }, onError: () {
-      print('PROBLEM CREATING THE RENAMED FILE.');
-      _finishedLoading();
-    });
   }
 }
