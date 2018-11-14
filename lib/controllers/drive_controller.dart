@@ -68,6 +68,7 @@ class Drive {
       String id,
       String name,
       String content,
+      String changeType,
       Function onFileUpdated,
       Function onUpdateFailed) async {
     drive.File metaData = drive.File();
@@ -77,7 +78,7 @@ class Drive {
     driveApi.files
         .update(metaData, id, uploadMedia: media, $fields: 'id, name')
         .then((drive.File f) {
-      onFileUpdated(f, content);
+      onFileUpdated(f, content, changeType);
     }, onError: (e) {
       onUpdateFailed();
     });

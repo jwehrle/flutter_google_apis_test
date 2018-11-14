@@ -17,6 +17,7 @@ class MainModel extends Model {
   String accessToken;
   String idToken;
 
+  DateTime _deviceLogInTime;
   FirebaseUser _firebaseUser;
   FirebaseAuth _firebaseAuth;
   var changeLogStream;
@@ -38,6 +39,7 @@ class MainModel extends Model {
 
   MainModel._() {
     _firebaseAuth = FirebaseAuth.instance;
+    _deviceLogInTime = DateTime.now();
     SharedPreferences.getInstance().then((preferences) {
       pref = preferences;
       Storage.initStorage(pref);
@@ -53,7 +55,7 @@ class MainModel extends Model {
 
   Future _saveToChangeLog(String action, String id) async {
     Change change = Change(action, id);
-    Storage.saveChange(pref, change);
+    //Storage.saveChange(pref, change);
     FirebaseDatabase.instance
         .reference()
         .child(_firebaseUser.uid)
@@ -64,6 +66,12 @@ class MainModel extends Model {
     }, onError: (e) {
       print(e.toString());
     });
+  }
+
+  void _deleteChange(Change change) {
+//    FirebaseDatabase.instance
+//        .reference()
+//        .child(_firebaseUser.uid).
   }
 
   void _startedLoading() {
@@ -114,7 +122,7 @@ class MainModel extends Model {
                   .child(_firebaseUser.uid)
                   .onChildAdded
                   .listen((changeEvent) {
-                //_handleChangeEvent(changeEvent);//TODO this is being called for everything.
+                _handleChangeEvent(changeEvent);
               });
             });
           });
@@ -142,31 +150,69 @@ class MainModel extends Model {
       return;
     }
     Change change = Change.fromJson(json.decode(changeEvent.snapshot.value));
-    var changeMap = await Storage.getLocalChanges(pref);
-    if (changeMap.containsKey(change.changeID)) {
+    if (DateTime.parse(change.createdAt)
+        .isBefore(_deviceLogInTime.subtract(Duration(minutes: 1)))) {// minus 1 minute to account for different system times on devices.
+      FirebaseDatabase.instance
+          .reference()
+          .child(_firebaseUser.uid)
+          .child(changeEvent.snapshot.key)
+          .remove()
+          .then((_) {
+        print('Removed ' + changeEvent.snapshot.value);
+      }, onError: (e) {
+        print(e.toString());
+      });
       return;
     }
+//    var changeMap = await Storage.getLocalChanges(pref);
+//    if (changeMap.containsKey(change.changeID)) {
+//      return;
+//    }
     switch (change.action) {
       case Change.CREATED:
+      case Change.RENAMED:
         Drive.getMetaFile(_driveApi, change.fileID).then((metaFile) {
-          Storage.saveChange(pref, change);
           Storage.putMetaFile(pref, metaFile.id, metaFile);
+          notifyListeners();
+        }, onError: () {
+          print('Download in response to sync failed.');
           notifyListeners();
         });
         break;
       case Change.UPDATED:
         if (Storage.containsContent(pref, change.fileID)) {
           Drive.getFileContents(_driveApi, change.fileID).then((content) {
-            Storage.saveChange(pref, change);
+            //Storage.saveChange(pref, change);
             Storage.putFileContent(pref, change.fileID, content);
+            notifyListeners();
+          }, onError: () {
+            print('Download in response to sync failed.');
             notifyListeners();
           });
         }
         break;
+      case Change.UPDATED_AND_RENAMED:
+        Drive.getMetaFile(_driveApi, change.fileID).then((metaFile) {
+          Storage.putMetaFile(pref, metaFile.id, metaFile);
+          if (Storage.containsContent(pref, change.fileID)) {
+            Drive.getFileContents(_driveApi, change.fileID).then((content) {
+              Storage.putFileContent(pref, change.fileID, content);
+              notifyListeners();
+            }, onError: () {
+              print('Download in response to sync failed.');
+              notifyListeners();
+            });
+          } else {
+            notifyListeners();
+          }
+        }, onError: () {
+          print('Download in response to sync failed.');
+          notifyListeners();
+        });
+        break;
       case Change.DELETED:
         Storage.deleteMeta(pref, change.fileID);
         Storage.deleteContent(pref, change.fileID);
-        Storage.saveChange(pref, change);
         notifyListeners();
         break;
     }
@@ -239,16 +285,17 @@ class MainModel extends Model {
     });
   }
 
-  void updateFile(String id, String name, String content) async {
+  void updateFile(
+      String id, String name, String content, String changeType) async {
     _startedLoading();
-    Drive.updateFile(
-        _driveApi, id, name, content, _onFileUpdated, _onUpdateFailed);
+    Drive.updateFile(_driveApi, id, name, content, changeType, _onFileUpdated,
+        _onUpdateFailed);
   }
 
-  void _onFileUpdated(drive.File file, String content) {
+  void _onFileUpdated(drive.File file, String content, String changeType) {
     Storage.putMetaFile(pref, file.id, file);
     Storage.putFileContent(pref, file.id, content);
-    _saveToChangeLog(Change.UPDATED, file.id);
+    _saveToChangeLog(changeType, file.id);
     _finishedLoading();
   }
 

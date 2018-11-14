@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_google_apis_test/models/main_model.dart';
 import 'package:scoped_model/scoped_model.dart';
+import 'package:flutter_google_apis_test/models/change.dart';
 
 class EditPage extends StatefulWidget {
   @override
@@ -45,8 +46,22 @@ class EditState extends State<EditPage> {
         ),
         floatingActionButton: new FloatingActionButton(
           onPressed: () {
+            String changeType;
+            if (name == _nameController.text &&
+                content == _contentController.text) {
+              return;
+            }
+            if (name == _nameController.text &&
+                content != _contentController.text) {
+              changeType = Change.UPDATED;
+            } else if (name != _nameController.text &&
+                content == _contentController.text) {
+              changeType = Change.RENAMED;
+            } else {
+              changeType = Change.UPDATED_AND_RENAMED;
+            }
             model.updateFile(
-                id, _nameController.text, _contentController.text);
+                id, _nameController.text, _contentController.text, changeType);
             Navigator.pushNamed(context, '/');
           },
           child: Icon(Icons.check),

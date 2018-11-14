@@ -9,6 +9,8 @@ class Change {
   static const String CREATED = 'created';
   static const String UPDATED = 'updated';
   static const String DELETED = 'deleted';
+  static const String RENAMED = 'renamed';
+  static const String UPDATED_AND_RENAMED = 'update_rename';
 
   String changeID;
   String action;
