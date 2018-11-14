@@ -55,7 +55,6 @@ class MainModel extends Model {
 
   Future _saveToChangeLog(String action, String id) async {
     Change change = Change(action, id);
-    //Storage.saveChange(pref, change);
     FirebaseDatabase.instance
         .reference()
         .child(_firebaseUser.uid)
@@ -66,12 +65,6 @@ class MainModel extends Model {
     }, onError: (e) {
       print(e.toString());
     });
-  }
-
-  void _deleteChange(Change change) {
-//    FirebaseDatabase.instance
-//        .reference()
-//        .child(_firebaseUser.uid).
   }
 
   void _startedLoading() {
@@ -114,9 +107,6 @@ class MainModel extends Model {
               _firebaseUser = user;
               _signedIn = true;
               downloadMetaFiles();
-//              Storage.deleteChangeLogs(pref); //Delete old change logs at start
-//              Storage.deleteLocalFileContents(
-//                  pref); // One copy of data and it lives on GDrive.
               changeLogStream = FirebaseDatabase.instance
                   .reference()
                   .child(_firebaseUser.uid)
@@ -151,7 +141,7 @@ class MainModel extends Model {
     }
     Change change = Change.fromJson(json.decode(changeEvent.snapshot.value));
     if (DateTime.parse(change.createdAt)
-        .isBefore(_deviceLogInTime.subtract(Duration(minutes: 1)))) {// minus 1 minute to account for different system times on devices.
+        .isBefore(_deviceLogInTime.subtract(Duration(minutes: 1)))) {
       FirebaseDatabase.instance
           .reference()
           .child(_firebaseUser.uid)
@@ -164,10 +154,7 @@ class MainModel extends Model {
       });
       return;
     }
-//    var changeMap = await Storage.getLocalChanges(pref);
-//    if (changeMap.containsKey(change.changeID)) {
-//      return;
-//    }
+
     switch (change.action) {
       case Change.CREATED:
       case Change.RENAMED:
@@ -182,7 +169,6 @@ class MainModel extends Model {
       case Change.UPDATED:
         if (Storage.containsContent(pref, change.fileID)) {
           Drive.getFileContents(_driveApi, change.fileID).then((content) {
-            //Storage.saveChange(pref, change);
             Storage.putFileContent(pref, change.fileID, content);
             notifyListeners();
           }, onError: () {

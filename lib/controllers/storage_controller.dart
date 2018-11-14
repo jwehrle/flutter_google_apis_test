@@ -9,15 +9,6 @@ class Storage {
   static const String FILE_META_PREFIX = 'meta_';
   static const String TASK_PREFIX = 'task_';
   static const String TAG_PREFIX = 'tag_';
-  static const String CHANGE_PREFIX = 'change_';
-
-  static void deleteChangeLogs(SharedPreferences pref) async {
-    pref.getKeys().forEach((key) {
-      if (key.startsWith(CHANGE_PREFIX)) {
-        pref.remove(key);
-      }
-    });
-  }
 
   static void deleteLocalFileContents(SharedPreferences pref) async {
     pref.getKeys().forEach((key) {
@@ -27,32 +18,8 @@ class Storage {
     });
   }
 
-  static void saveChange(SharedPreferences pref, Change change) async {
-    pref.setString(CHANGE_PREFIX + change.changeID, change.toJsonString());
-  }
-
   static void initStorage(SharedPreferences pref) {
     pref.clear();
-  }
-
-  static Future<Map<String, Change>> getLocalChanges(
-      SharedPreferences pref) async {
-    Map<String, Change> changeMap = Map();
-    pref.getKeys().forEach((key) {
-      if (key.startsWith(CHANGE_PREFIX)) {
-        Change change = Change.fromJson(json.decode(pref.getString(key)));
-        changeMap[change.changeID] = change;
-      }
-    });
-    return changeMap;
-  }
-
-  static bool hasChange(SharedPreferences pref, String id) {
-    return pref.getKeys().contains(CHANGE_PREFIX + id);
-  }
-
-  static Change getChange(SharedPreferences pref, String id) {
-    return Change.fromJson(json.decode(pref.getString(CHANGE_PREFIX + id)));
   }
 
   static bool containsTag(SharedPreferences pref, String id) {
