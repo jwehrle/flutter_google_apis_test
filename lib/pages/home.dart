@@ -31,7 +31,7 @@ class _HomePageState extends State<HomePage> {
         body: _buildBasedOnModel(model),
         floatingActionButton: new FloatingActionButton(
           onPressed: () {
-            Navigator.pushNamed(context, '/add'); //'/time_line'
+            Navigator.pushNamed(context, '/time_line'); //'/add'
           },
           child: Icon(Icons.add),
         ),

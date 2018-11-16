@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 //import 'dart:math';
 //import 'package:flutter_google_apis_test/models/main_model.dart';
 //import 'package:scoped_model/scoped_model.dart';
@@ -21,18 +22,24 @@ class TimeLineState extends State<TimeLinePage> with TickerProviderStateMixin {
 
   DateTime dateTime;
 //  Map<String, DateTime> dateMap = Map();
+  var formatter;
 
-  void _addDay() {
-    setState(() {
-      dateTime = dateTime.add(Duration(days: 1));
-    });
-  }
+  PageController pageController;
+  //List<DateTime> dateRange;
+  int curIndex;
+  int initialIndex = 111111;
 
-  void _subtractDay() {
-    setState(() {
-      dateTime = dateTime.subtract(Duration(days: 1));
-    });
-  }
+//  void _addDay() {
+//    setState(() {
+//      dateTime = dateTime.add(Duration(days: 1));
+//    });
+//  }
+//
+//  void _subtractDay() {
+//    setState(() {
+//      dateTime = dateTime.subtract(Duration(days: 1));
+//    });
+//  }
 
 //  TabController _tc;
 //
@@ -64,11 +71,28 @@ class TimeLineState extends State<TimeLinePage> with TickerProviderStateMixin {
 //    });
 //  }
 
+//  void _assignDateRange() {
+//    dateRange[0] = dateTime.subtract(Duration(days: 4));
+//    dateRange[1] = dateTime.subtract(Duration(days: 3));
+//    dateRange[2] = dateTime.subtract(Duration(days: 2));
+//    dateRange[3] = dateTime.subtract(Duration(days: 1));
+//    dateRange[4] = dateTime;
+//    dateRange[5] = dateTime.add(Duration(days: 1));
+//    dateRange[6] = dateTime.add(Duration(days: 2));
+//    dateRange[7] = dateTime.add(Duration(days: 3));
+//    dateRange[8] = dateTime.add(Duration(days: 4));
+//  }
+
   @override
   void initState() {
     super.initState();
+    formatter = new DateFormat('yMEd');
     //this._addTab();
     dateTime = DateTime.now();
+    //dateRange = List(9);
+    //_assignDateRange();
+    pageController = PageController(initialPage: initialIndex);
+    curIndex = initialIndex;
   }
 
 //  Widget _itemBuilder(Color color, int index) {
@@ -135,8 +159,21 @@ class TimeLineState extends State<TimeLinePage> with TickerProviderStateMixin {
 //    );
 //  }
 
+  void _setCurIndex(int index) {
+    setState(() {
+      curIndex = index;
+    });
+  }
+
+  String _setAppBarText() {
+    int actualIndex = curIndex - initialIndex;
+    return formatter.format(dateTime.add(Duration(days: actualIndex)));
+  }
+
   @override
   Widget build(BuildContext context) {
+    //dateTime = DateTime.now();
+    String formattedDate = formatter.format(dateTime);
     return Scaffold(
         appBar: AppBar(
           title: Text("Dynamic days"),
@@ -147,26 +184,42 @@ class TimeLineState extends State<TimeLinePage> with TickerProviderStateMixin {
           bottom: AppBar(
               leading: Text(''),
               title: Text(
-                dateTime.toIso8601String(),
+                _setAppBarText(), //dateTime.toIso8601String(),
               )),
         ),
-        body: Dismissible(
-          key: Key(dateTime.toIso8601String()),
-          onDismissed: (direction) {
-            if (direction == DismissDirection.startToEnd) {
-              _subtractDay();
-            }
-            if (direction == DismissDirection.endToStart) {
-              _addDay();
-            }
-          },
-          child: Center(
-            child: Text(
-              dateTime.toIso8601String(),
-              style: TextStyle(fontSize: 40),
-            ),
-          ),
-        ));
+        body: PageView.builder(
+            controller: pageController,
+            //itemCount: 9,
+            onPageChanged: (index) => _setCurIndex(index),
+            itemBuilder: (context, index) {
+              int actualIndex = index - initialIndex;
+              return Center(
+                child: Container(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text(
+                    formatter.format(dateTime.add(Duration(days: actualIndex))),
+                    style: TextStyle(fontSize: 25),
+                  ),
+                ),
+              );
+            }));
+//        Dismissible(
+//          key: Key(dateTime.toIso8601String()),
+//          onDismissed: (direction) {
+//            if (direction == DismissDirection.startToEnd) {
+//              _subtractDay();
+//            }
+//            if (direction == DismissDirection.endToStart) {
+//              _addDay();
+//            }
+//          },
+//          child: Center(
+//            child: Text(
+//              formattedDate, //dateTime.toIso8601String(),
+//              style: TextStyle(fontSize: 40),
+//            ),
+//          ),
+//        ));
   }
 
 //  TabBarView(
