@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:clock/clock.dart';
+import 'dart:async';
 //import 'dart:math';
 //import 'package:flutter_google_apis_test/models/main_model.dart';
 //import 'package:scoped_model/scoped_model.dart';
@@ -28,6 +30,7 @@ class TimeLineState extends State<TimeLinePage> with TickerProviderStateMixin {
   //List<DateTime> dateRange;
   int curIndex;
   int initialIndex = 111111;
+  Clock _clock;
 
 //  void _addDay() {
 //    setState(() {
@@ -86,13 +89,21 @@ class TimeLineState extends State<TimeLinePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    formatter = new DateFormat('yMEd');
+    formatter = DateFormat.yMEd().add_jms(); //DateFormat('EEEE, hh:mm:ss');
     //this._addTab();
     dateTime = DateTime.now();
     //dateRange = List(9);
     //_assignDateRange();
     pageController = PageController(initialPage: initialIndex);
     curIndex = initialIndex;
+    _clock = Clock();
+    Timer.periodic(Duration(seconds: 1), _onSecond);
+  }
+
+  void _onSecond(Timer timer) {
+    setState(() {
+      dateTime = DateTime.now();
+    });
   }
 
 //  Widget _itemBuilder(Color color, int index) {
@@ -175,34 +186,57 @@ class TimeLineState extends State<TimeLinePage> with TickerProviderStateMixin {
     //dateTime = DateTime.now();
     String formattedDate = formatter.format(dateTime);
     return Scaffold(
-        appBar: AppBar(
-          title: Text("Dynamic days"),
+      appBar: AppBar(
+        title: Text("Dynamic days"),
 //        actions: <Widget>[
 //          IconButton(icon: Icon(Icons.add), onPressed: this._addTab),
 //          IconButton(icon: Icon(Icons.remove), onPressed: this._removeTab),
 //        ],
-          bottom: AppBar(
-              leading: Text(''),
-              title: Text(
-                _setAppBarText(), //dateTime.toIso8601String(),
-              )),
-        ),
-        body: PageView.builder(
-            controller: pageController,
-            //itemCount: 9,
-            onPageChanged: (index) => _setCurIndex(index),
-            itemBuilder: (context, index) {
-              int actualIndex = index - initialIndex;
-              return Center(
-                child: Container(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text(
-                    formatter.format(dateTime.add(Duration(days: actualIndex))),
-                    style: TextStyle(fontSize: 25),
-                  ),
+        bottom: AppBar(
+            leading: Text(''),
+            title: Text(
+              _setAppBarText(), //dateTime.toIso8601String(),
+            )),
+      ),
+      body: PageView.builder(
+          controller: pageController,
+          //itemCount: 9,
+          onPageChanged: (index) => _setCurIndex(index),
+          itemBuilder: (context, index) {
+            int actualIndex = index - initialIndex;
+            return Center(
+              child: Container(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  formatter.format(dateTime.add(Duration(days: actualIndex))),
+                  style: TextStyle(fontSize: 25),
                 ),
-              );
-            }));
+              ),
+            );
+          }),
+      floatingActionButton: FloatingActionButton(
+          backgroundColor: Colors.purpleAccent,
+          child: Icon(Icons.map),
+          onPressed: () {
+            showModalBottomSheet(
+                context: context,
+                builder: (context) {
+                  return ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: 10,
+                      itemBuilder: (context, index) {
+                        return Opacity(
+                          opacity: index.toDouble() / 10,
+                          child: Container(
+                            color: Colors.deepPurple,
+                            height: 100,
+                            width: 100,
+                          ),
+                        );
+                      });
+                });
+          }),
+    );
 //        Dismissible(
 //          key: Key(dateTime.toIso8601String()),
 //          onDismissed: (direction) {
