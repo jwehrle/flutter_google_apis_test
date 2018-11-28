@@ -5,5 +5,3 @@ class EditPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => EditState();
 }
-
-

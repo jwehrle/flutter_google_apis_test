@@ -1,157 +1,81 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:clock/clock.dart';
 import 'dart:async';
 import 'package:flutter_google_apis_test/pages/time_line.dart';
 
 class TimeLineState extends State<TimeLinePage> with TickerProviderStateMixin {
-  DateTime dateTime;
-//  Map<String, DateTime> dateMap = Map();
-  var formatter;
+  static const int SECONDS = 0;
+  static const int MINUTES = 1;
+  static const int HOURS = 2;
+  static const int DAYS = 3;
 
+  DateTime dateTime;
+  var formatter;
   PageController pageController;
-  //List<DateTime> dateRange;
   int curIndex;
   int initialIndex = 111111;
-  Clock _clock;
-
-//  void _addDay() {
-//    setState(() {
-//      dateTime = dateTime.add(Duration(days: 1));
-//    });
-//  }
-//
-//  void _subtractDay() {
-//    setState(() {
-//      dateTime = dateTime.subtract(Duration(days: 1));
-//    });
-//  }
-
-//  TabController _tc;
-//
-//  List<Map<String, dynamic>> _tabs = [];
-//  List<String> _views = [];
-//
-//  TabController _makeNewTabController() => TabController(
-//        vsync: this,
-//        length: _tabs.length,
-//        initialIndex: _tabs.length - 1,
-//      );
-//
-//  void _addTab() {
-//    setState(() {
-//      _tabs.add({
-//        'icon': Icons.star,
-//        'text': "Tab ${_tabs.length + 1}",
-//      });
-//      _views.add("Tab ${_tabs.length}'s view");
-//      _tc = _makeNewTabController();
-//    });
-//  }
-//
-//  void _removeTab() {
-//    setState(() {
-//      _tabs.removeLast();
-//      _views.removeLast();
-//      _tc = _makeNewTabController();
-//    });
-//  }
-
-//  void _assignDateRange() {
-//    dateRange[0] = dateTime.subtract(Duration(days: 4));
-//    dateRange[1] = dateTime.subtract(Duration(days: 3));
-//    dateRange[2] = dateTime.subtract(Duration(days: 2));
-//    dateRange[3] = dateTime.subtract(Duration(days: 1));
-//    dateRange[4] = dateTime;
-//    dateRange[5] = dateTime.add(Duration(days: 1));
-//    dateRange[6] = dateTime.add(Duration(days: 2));
-//    dateRange[7] = dateTime.add(Duration(days: 3));
-//    dateRange[8] = dateTime.add(Duration(days: 4));
-//  }
+  int scale;
 
   @override
   void initState() {
     super.initState();
-    formatter = DateFormat.yMEd().add_jms(); //DateFormat('EEEE, hh:mm:ss');
-    //this._addTab();
     dateTime = DateTime.now();
-    //dateRange = List(9);
-    //_assignDateRange();
     pageController = PageController(initialPage: initialIndex);
     curIndex = initialIndex;
-    _clock = Clock();
-    Timer.periodic(Duration(seconds: 1), _onSecond);
+    scale = SECONDS;
+    _setScale(scale);
   }
 
-  void _onSecond(Timer timer) {
+  void _setScale(int timeScale) {
+    switch (timeScale) {
+      case SECONDS:
+        setState(() {
+          formatter = DateFormat.yMEd().add_jms();
+          Timer.periodic(Duration(seconds: 1), _onTic);
+        });
+        break;
+      case MINUTES:
+        setState(() {
+          formatter = DateFormat.yMEd().add_jm();
+          Timer.periodic(Duration(minutes: 1), _onTic);
+        });
+        break;
+      case HOURS:
+        setState(() {
+          formatter = DateFormat.yMEd().add_j();
+          Timer.periodic(Duration(hours: 1), _onTic);
+        });
+        break;
+      case DAYS:
+        setState(() {
+          formatter = DateFormat.yMEd();
+          Timer.periodic(Duration(days: 1), _onTic);
+        });
+        break;
+    }
+  }
+
+  void _onTic(Timer timer) {
     setState(() {
       dateTime = DateTime.now();
     });
   }
 
-//  Widget _itemBuilder(Color color, int index) {
-//    return Opacity(
-//      opacity: index.toDouble() / 10,
-//      child: Container(
-//        color: color,
-//        width: 100,
-//        height: 100,
-//      ),
-//    );
-//  }
+  void _incrementScale() {
+    if (scale == DAYS) {
+      return;
+    }
+    scale += 1;
+    _setScale(scale);
+  }
 
-//  Widget _buildRow(int rowIndex) {
-//    Color color = Colors.black;
-//    switch (rowIndex) {
-//      case 0:
-//        color = Colors.purple;
-//        break;
-//      case 1:
-//        color = Colors.cyan;
-//        break;
-//      case 2:
-//        color = Colors.deepOrange;
-//        break;
-//      case 3:
-//        color = Colors.green;
-//        break;
-//      case 4:
-//        color = Colors.pink;
-//        break;
-//      case 5:
-//        color = Colors.amber;
-//        break;
-//      case 6:
-//        color = Colors.lightBlue;
-//        break;
-//      case 7:
-//        color = Colors.brown;
-//        break;
-//      case 8:
-//        color = Colors.lightGreen;
-//        break;
-//      case 9:
-//        color = Colors.lime;
-//        break;
-//    }
-//    return ListView.builder(
-//      scrollDirection: Axis.horizontal,
-//      itemCount: 10,
-//      itemBuilder: (BuildContext context, int index) {
-//        _itemBuilder(color, index);
-//      },
-//    );
-//  }
-
-//  Widget _buildVerticalListView() {
-//    return ListView.builder(
-//      scrollDirection: Axis.vertical,
-//      itemCount: 10,
-//      itemBuilder: (BuildContext context, int index) {
-//        _buildRow(index);
-//      },
-//    );
-//  }
+  void _decrementScale() {
+    if (scale == SECONDS) {
+      return;
+    }
+    scale -= 1;
+    _setScale(scale);
+  }
 
   void _setCurIndex(int index) {
     setState(() {
@@ -166,24 +90,21 @@ class TimeLineState extends State<TimeLinePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    //dateTime = DateTime.now();
-    String formattedDate = formatter.format(dateTime);
     return Scaffold(
       appBar: AppBar(
         title: Text("Dynamic days"),
-//        actions: <Widget>[
-//          IconButton(icon: Icon(Icons.add), onPressed: this._addTab),
-//          IconButton(icon: Icon(Icons.remove), onPressed: this._removeTab),
-//        ],
+        actions: <Widget>[
+          IconButton(icon: Icon(Icons.add), onPressed: _incrementScale),
+          IconButton(icon: Icon(Icons.remove), onPressed: _decrementScale),
+        ],
         bottom: AppBar(
             leading: Text(''),
             title: Text(
-              _setAppBarText(), //dateTime.toIso8601String(),
+              _setAppBarText(),
             )),
       ),
       body: PageView.builder(
           controller: pageController,
-          //itemCount: 9,
           onPageChanged: (index) => _setCurIndex(index),
           itemBuilder: (context, index) {
             int actualIndex = index - initialIndex;
@@ -220,38 +141,5 @@ class TimeLineState extends State<TimeLinePage> with TickerProviderStateMixin {
                 });
           }),
     );
-//        Dismissible(
-//          key: Key(dateTime.toIso8601String()),
-//          onDismissed: (direction) {
-//            if (direction == DismissDirection.startToEnd) {
-//              _subtractDay();
-//            }
-//            if (direction == DismissDirection.endToStart) {
-//              _addDay();
-//            }
-//          },
-//          child: Center(
-//            child: Text(
-//              formattedDate, //dateTime.toIso8601String(),
-//              style: TextStyle(fontSize: 40),
-//            ),
-//          ),
-//        ));
   }
-
-//  TabBarView(
-//  key: Key(Random().nextDouble().toString()),
-//  controller: _tc,
-//  children: _views.map((view) => Center(child: Text(view))).toList(),
-//  ),
-//  TabBar(
-//  controller: _tc,
-//  isScrollable: true,
-//  tabs: _tabs
-//      .map((tab) => Tab(
-//  icon: Icon(tab['icon']),
-//  text: tab['text'],
-//  ))
-//      .toList(),
-//  ),
 }

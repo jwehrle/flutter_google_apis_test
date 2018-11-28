@@ -5,5 +5,3 @@ class DetailPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => DetailState();
 }
-
-
